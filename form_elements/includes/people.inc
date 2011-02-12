@@ -210,7 +210,7 @@ function ife_add_conf_submit($form, &$form_state) {
 
 
 function theme_people($element) {
-    drupal_add_js(drupal_get_path('module', 'islandora_form_elements') .'/js/people_ahah.js');
+    drupal_add_js(drupal_get_path('module', 'islandora_form_builder_elements') .'/js/people_ahah.js');
     if (!empty($element['#collapsible'])) {
     drupal_add_js('misc/collapse.js');
 
@@ -281,7 +281,7 @@ function theme_people_items($form) {
   $output .= drupal_render($form);
 
   // Add our JS file, which has some Drupal core JS overrides, and ensures ahah behaviours get re-attached
-  drupal_add_css(drupal_get_path('module', 'islandora_form_elements') .'/css/people.css');
+  drupal_add_css(drupal_get_path('module', 'islandora_form_builder_elements') .'/css/people.css');
   return $output;  
 }
 

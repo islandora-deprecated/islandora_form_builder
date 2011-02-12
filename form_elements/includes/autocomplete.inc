@@ -90,7 +90,7 @@ function ife_autocomplete_person($string)  {
 }
 
 function ife_autocomplete_marcrelator($collection, $string='') {
-  $moduleRoot = drupal_get_path('module', 'islandora_form_elements');
+  $moduleRoot = drupal_get_path('module', 'islandora_form_builder_elements');
 
   if ($string == '') {
      $string = $collection;
@@ -124,7 +124,7 @@ function ife_autocomplete_marcrelator($collection, $string='') {
 }
 
 function ife_autocomplete_gacs($collection, $string='') {
-  $moduleRoot = drupal_get_path('module', 'islandora_form_elements');
+  $moduleRoot = drupal_get_path('module', 'islandora_form_builder_elements');
 
   if ($string == '') {
      $string = $collection;
@@ -154,7 +154,7 @@ function ife_autocomplete_gacs($collection, $string='') {
 }
 
 function ife_autocomplete_language($collection, $string='') {
-  $moduleRoot=drupal_get_path('module', 'islandora_form_elements');
+  $moduleRoot=drupal_get_path('module', 'islandora_form_builder_elements');
 
   if ($string == '') {
      $string = $collection;

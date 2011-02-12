@@ -1,12 +1,10 @@
 <?php
 
-
 /**
  * Implementation of hook_elements():
  * Register the duration widget with the Forms API and set default values.
  */
-function islandora_form_elements_elements() {
-
+function islandora_form_builder_elements_elements() {
   
   $type['fieldset'] = array(
     '#input'=> TRUE,
@@ -554,7 +552,7 @@ function ife_sticky_select_process($element,$edit,&$form_state)
  */
 function ife_copyright_process($element,$edit,&$form_state) {
 
-  module_load_include('inc','islandora_form_elements','includes/creative_commons');
+  module_load_include('inc','islandora_form_builder_elements','includes/creative_commons');
   
   if (isset($element['#sticky']) && $element['#sticky'] == TRUE)
   {
@@ -571,7 +569,7 @@ function ife_copyright_process($element,$edit,&$form_state) {
   }  
 
   if ($element['#sticky']) { 
-    $path=drupal_get_path('module','islandora_form_elements');
+    $path=drupal_get_path('module','islandora_form_builder_elements');
     drupal_add_css($path.'/css/sticky.css');
     $stickyName = preg_replace('/\]/','',array_pop(preg_split('/\[/',$element['#name']))).'-sticky';
     $sticky = (isset($element['#sticky']) && $element['#sticky'] == TRUE?'<input class="sticky" type="checkbox" name="'.$stickyName.'"'.(isset($element['#sticky_on']) && $element['#sticky_on']==TRUE?' checked="checked"':'').'/><br/>':'');
@@ -663,7 +661,7 @@ function ife_list_process($element,$edit,&$form_state)
  *
  * This lets us tell Drupal about our theme functions and their arguments.
  */
-function islandora_form_elements_theme() {
+function islandora_form_builder_elements_theme() {
   return array( 
     'sticky_textfield' => array(
       'arguments' => array('element'),
@@ -717,7 +715,7 @@ function ife_other_select_process($element,$edit,&$form_state)
 
 function theme_copyright($element)
 {
-  $path=drupal_get_path('module','islandora_form_elements');
+  $path=drupal_get_path('module','islandora_form_builder_elements');
   drupal_add_js($path.'/js/copyright.js');
   drupal_add_css($path.'/css/copyright.css');
  
@@ -726,7 +724,7 @@ function theme_copyright($element)
 
 function theme_other_select($element)
 {
-  $path=drupal_get_path('module','islandora_form_elements');
+  $path=drupal_get_path('module','islandora_form_builder_elements');
   drupal_add_js($path.'/js/otherselect.js');
   $select = '';
   $size = $element['#size'] ? ' size="'. $element['#size'] .'"' : '';
@@ -736,7 +734,7 @@ function theme_other_select($element)
 
 function theme_list($element)
 {
-  $path=drupal_get_path('module','islandora_form_elements');
+  $path=drupal_get_path('module','islandora_form_builder_elements');
   drupal_add_js($path.'/js/jquery.tag.editor-min.js');
   drupal_add_js('$(document).ready(function () { $(\'#'.$element['#id'].'\').tagEditor({   separator: \';\', confirmRemoval: false, completeOnBlur: true }); }); ', 'inline');
   drupal_add_css($path.'/css/list.css');
@@ -767,7 +765,7 @@ function theme_list($element)
      $output .= ' <span class="field-suffix">'. $element['#field_suffix'] .'</span>';
    }
    
-   $path=drupal_get_path('module','islandora_form_elements');
+   $path=drupal_get_path('module','islandora_form_builder_elements');
    drupal_add_css($path.'/css/sticky.css');
    $stickyName = preg_replace('/\]/','',array_pop(preg_split('/\[/',$element['#name']))).'-sticky';
    $sticky = (isset($element['#sticky']) && $element['#sticky'] == TRUE?'<input class="sticky" type="checkbox" name="'.$stickyName.'"'.(isset($element['#sticky_on']) && $element['#sticky_on']==TRUE?' checked="checked"':'').'/><br/>':'');
@@ -809,7 +807,7 @@ function theme_sticky_textarea($element) {
     $class[] = 'resizable';
   }
 
-   $path=drupal_get_path('module','islandora_form_elements');
+   $path=drupal_get_path('module','islandora_form_builder_elements');
    drupal_add_css($path.'/css/sticky.css');
    $stickyName = preg_replace('/\]/','',array_pop(preg_split('/\[/',$element['#name']))).'-sticky';
    $sticky = (isset($element['#sticky']) && $element['#sticky'] == TRUE?'<input class="sticky" type="checkbox" name="'.$stickyName.'"'.(isset($element['#sticky_on']) && $element['#sticky_on']==TRUE?' checked="checked"':'').'/><br/>':'');
@@ -833,7 +831,7 @@ function theme_sticky_textarea($element) {
  * @ingroup themeable
  */
 function theme_sticky_select($element) {
-   $path=drupal_get_path('module','islandora_form_elements');
+   $path=drupal_get_path('module','islandora_form_builder_elements');
    drupal_add_css($path.'/css/sticky.css');
    $stickyName = preg_replace('/\]/','',array_pop(preg_split('/\[/',$element['#name']))).'-sticky';
    $sticky = (isset($element['#sticky']) && $element['#sticky'] == TRUE?'<input class="sticky" type="checkbox" name="'.$stickyName.'"'.(isset($element['#sticky_on']) && $element['#sticky_on']==TRUE?' checked="checked"':'').'/><br/>':'');
@@ -855,7 +853,7 @@ function theme_sticky_select($element) {
  */
 function theme_datepicker($element) {
   global $base_url;
-  $path=drupal_get_path('module','islandora_form_elements');
+  $path=drupal_get_path('module','islandora_form_builder_elements');
   drupal_add_js($path.'/js/jquery.ui.core.js');
   drupal_add_js($path.'/js/jquery.ui.widget.js');
   drupal_add_js($path.'/js/jquery.ui.datepicker.js');
@@ -886,7 +884,7 @@ function theme_datepicker($element) {
      $output .= ' <span class="field-suffix">'. $element['#field_suffix'] .'</span>';
    }
    
-   $path=drupal_get_path('module','islandora_form_elements');
+   $path=drupal_get_path('module','islandora_form_builder_elements');
    drupal_add_css($path.'/css/sticky.css');
    $stickyName = preg_replace('/\]/','',array_pop(preg_split('/\[/',$element['#name']))).'-sticky';
    $sticky = (isset($element['#sticky']) && $element['#sticky'] == TRUE?'<input class="sticky" type="checkbox" name="'.$stickyName.'"'.(isset($element['#sticky_on']) && $element['#sticky_on']==TRUE?' checked="checked"':'').'/><br/>':'');
@@ -933,7 +931,7 @@ function theme_sticky_textfield($element) {
      $output .= ' <span class="field-suffix">'. $element['#field_suffix'] .'</span>';
    }
    
-   $path=drupal_get_path('module','islandora_form_elements');
+   $path=drupal_get_path('module','islandora_form_builder_elements');
    drupal_add_css($path.'/css/sticky.css');
    $stickyName = preg_replace('/\]/','',array_pop(preg_split('/\[/',$element['#name']))).'-sticky';
    $sticky = (isset($element['#sticky']) && $element['#sticky'] == TRUE?'<input class="sticky" type="checkbox" name="'.$stickyName.'"'.(isset($element['#sticky_on']) && $element['#sticky_on']==TRUE?' checked="checked"':'').'/><br/>':'');
@@ -961,7 +959,7 @@ function ife_filechooser_process($element, $edit, &$form_state)
  return $element;
 }
 
-function islandora_form_elements_menu()
+function islandora_form_builder_elements_menu()
 {
 
   module_load_include('inc','fedora_repository','ObjectHelper');
@@ -1037,10 +1035,8 @@ function islandora_form_elements_menu()
     'type' => MENU_CALLBACK,
     'access arguments' => array(ObjectHelper::$INGEST_FEDORA_OBJECTS),  
     'file' => 'includes/filechooser.inc'
-  );    
-
+  );
   
-
   return $items;
 }
 
