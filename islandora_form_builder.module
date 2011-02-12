@@ -1,0 +1,136 @@
+<?php
+
+// $Id$
+
+/**
+ * @file
+ *
+ */
+module_load_include('inc', 'islandora_form_builder', 'Utilities');
+
+//-------------------------------------------------------------------------------
+// say
+// Params:
+//  a - Anything
+// Returns: none.
+//
+// Debug function prints an object surrounded by div tags using print_r, remove after finished!
+//-------------------------------------------------------------------------------
+function say($a) {
+  if (is_bool($a)) {
+    $a = $a ? 'true' : 'false';
+  }
+  echo '<div>' . print_r($a, true) . '</div>';
+}
+
+/**
+ * Respond to menu hook.
+ *
+ * This hook is invoked from hook_menu().
+ *
+ * @ingroup menu_api_hooks
+ * @ingroup hooks
+ */
+function islandora_form_builder_menu() {
+  $items = array();
+  $items['fedora/ingestForm'] = array(// Discuss urls at a later date.
+    'title' => t('Ingest Form'),
+    'page callback' => 'islandora_form_builder_ingest',
+    'type' => MENU_CALLBACK,
+    'access arguments' => array('add fedora datastreams')
+  );
+  $items['fedora/editForm'] = array(// Discuss urls at a later date.
+    'title' => t('Edit Form'),
+    'page callback' => 'islandora_form_builder_edit',
+    'type' => MENU_CALLBACK,
+    'access arguments' => array('edit fedora meta data')
+  );
+}
+
+/**
+ *
+ * @param <type> $collection_pid
+ * @param <type> $collection_label
+ * @param <type> $content_model
+ * @return <type> 
+ */
+function islandora_form_builder_ingest($collection_pid = NULL, $collection_label = NULL) {
+  $collection_pid = islandora_form_builder_validate_url_argument_collection_pid($collection_pid);
+  if ($collection_pid !== FALSE) {
+    islandora_form_builder_set_bread_crumbs($collection_pid);
+    return drupal_get_form('islandora_form_builder_ingest_form', $collection_pid, $collection_label, $content_model);
+  }
+}
+
+/**
+ *
+ * @param <type> $form_state
+ * @param <type> $collection_pid
+ * @param <type> $collection_label
+ * @return <type>
+ */
+function islandora_form_builder_ingest_form(&$form_state, $collection_pid, $collection_label = NULL) {
+  module_load_include('inc', 'islandora_form_builder', 'IngestFormBuilder');
+  $ingest_form_builder = new FormBuilder(&$form_state, $collection_pid, $collection_label);
+  return $ingest_form_builder->createForm();
+}
+
+/**
+ *
+ * @param <type> $form
+ * @param <type> $form_state
+ * @return <type> 
+ */
+function islandora_form_builder_ingest_form_validate($form, &$form_state) {
+  /*
+   * Only validate the form if the submit button was pressed
+   * (other buttons may be used for AHAH)
+   */
+  if ($form_state['clicked_button']['#id'] == 'edit-submit')
+    return;
+  module_load_include('inc', 'islandora_form_builder', 'IngestFormBuilder');
+  $ingest_form_builder = new FormBuilder(&$form_state);
+  $ingest_form_builder->validateForm();
+}
+
+function islandora_form_builder_ingest_form_submit($form, &$form_state) {
+  /*
+   * Only submit the form if the submit button was pressed
+   * (other buttons may be used for AHAH)
+   */
+  if ($form_state['clicked_button']['#id'] == 'edit-submit')
+    return;
+  module_load_include('inc', 'islandora_form_builder', 'IngestFormBuilder');
+  $ingest_form_builder = new FormBuilder(&$form_state);
+  $ingest_form_builder->submitForm();
+}
+
+/**
+ * Menu Callback for the edit form.
+ *
+ * @param string $pid
+ *   Object PID.
+ * @param string $dsid
+ *   Datastream ID.
+ * 
+ * @return array
+ *   A drupal form, used to edit the object $pid and the datastream $dsid.
+ */
+function islandora_form_builder_edit($pid = NULL, $dsid = NULL) {
+  if (islandora_form_builder_check_edit_form_arguments_and_permissions($pid, $dsid)) {
+    return drupal_get_form('islandora_form_builder_edit_form', $pid, $dsid);
+  }
+}
+
+/**
+ *
+ * @param <type> $form_state
+ * @param <type> $pid
+ * @param <type> $dsid
+ * @return <type> 
+ */
+function islandora_form_builder_edit_form(&$form_state, $pid, $dsid) {
+  module_load_include('inc', 'islandora_form_builder', 'EditFormBuilder');
+  $edit_form_builder = new FormBuilder(&$form_state, $collection_pid, $collection_label);
+  return $edit_form_builder->createForm();
+}
