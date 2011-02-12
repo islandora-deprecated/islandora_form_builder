@@ -3,5 +3,6 @@ name = Islandora Form Builder
 description = Generates Forms used to create or edit Fedora Objects meta data.
 dependencies[] = fedora_repository
 dependencies[] = islandora_content_modeler
+dependencies[] = islandora_form_builder_elements
 package = Fedora Repository
 core = 6.x
