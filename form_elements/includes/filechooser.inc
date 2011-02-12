@@ -4,7 +4,7 @@
 
 function theme_filechooser($element) {
   global $base_url;
-  $path=drupal_get_path('module', 'islandora_form_elements');
+  $path=drupal_get_path('module', 'islandora_form_builder_elements');
   
   drupal_add_js($path .'/js/jcarousellite_1.0.1.js');
   drupal_add_js($path .'/js/jquery.easing.1.1.js');
