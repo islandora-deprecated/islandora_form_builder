@@ -1,4 +1,4 @@
-<?php
+=<?php
 
 // $Id$
 
@@ -9,7 +9,7 @@
  * common functionality that all XML based datastreams share. This class and 
  * its decendants are used to generate XML documents from submitted Drupal forms.
  * Specifically the forms that this class processes must be created by the
- * FormBuilder class or one of its decendants.
+ * IngestFormBuilder/EditFormBuilders classes or one of thier decendants.
  */
 class XmlDatastreamFormDocument extends DOMDocument {
 

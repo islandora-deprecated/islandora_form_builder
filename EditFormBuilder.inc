@@ -7,11 +7,12 @@
  *
  */
 module_load_include('inc', 'islandora_form_builder', 'Utilities');
+module_load_include('inc', 'islandora_form_builder', 'FormBuilderInterface');
 
 /**
  *
  */
-class IngestFormBuilder {
+class IngestFormBuilder implements FormBuilderInterface {
 
   /**
    * Drupal persistance form storage, specifically the index STORAGE_KEY where all
@@ -65,43 +66,58 @@ class IngestFormBuilder {
   }
 
   /**
-   * Gets the ingest form for rendering.
+   * Gets the edit form for rendering.
    *
    * @return array
-   *   Returns a Drupal form if the user can create one and the form exists in the content modeler,
+   *   Returns a Drupal form if the user can create one and the form exists in the content model,
    *   otherwise it returns FALSE.
    */
   public function createForm() {
-    global $user;
     module_load_include('inc', 'fedora_repository', 'ContentModel');
-    module_load_include('inc', 'fedora_repository', 'ObjectHelper');
+    $content_model = ContentModel::loadFromObject($this->pid);
+    if ($content_model !== FALSE) {
+      return $content_model->buildEditMetadataForm($this->pid, $this->dsid); // TODO handle this without the content model
+    }
+  }
 
-    
+  /**
+   *
+   * @param array $form
+   *   Drupal form to be validated.
+   */
+  public function validateForm(&$form) {
 
-    //module_load_include('inc', 'fedora_repository', 'formClass');
+  }
+
+  /**
+   *
+   * @param array $form
+   *   Drupal form to be validated.
+   */
+  public function submitForm(&$form) {
     module_load_include('inc', 'fedora_repository', 'ConnectionHelper');
-    $soapHelper = new ConnectionHelper();
+    global $base_url;
+    if (strstr($form_state['clicked_button']['#id'], 'edit-submit')) {
 
-    $client = $soapHelper->getSoapClient(variable_get('fedora_soap_url', 'http://localhost:8080/fedora/services/access?wsdl'));
-    // Check if there is a custom edit metadata function defined in the content model.
+      //$client = getSoapClient(variable_get('fedora_soap_manage_url', 'http://localhost:8080/fedora/services/management?wsdl'));
+      $soap_helper = new ConnectionHelper();
+      $client = $soap_helper->getSoapClient(variable_get('fedora_soap_manage_url', 'http://localhost:8080/fedora/services/management?wsdl'));
 
-    $breadcrumbs = array();
-    $objectHelper = new ObjectHelper();
-    $objectHelper->getBreadcrumbs($this->pid, $breadcrumbs);
-    drupal_set_breadcrumb(array_reverse($breadcrumbs));
+      // Check the content model for a custom edit metadata form submit function.
+      if (isset($form_state['values']['pid'])) {
+        module_load_include('inc', 'fedora_repository', 'ContentModel');
+        if (($cm = ContentModel::loadFromObject($form_state['values']['pid'])) !== FALSE) {
+          return $cm->handleEditMetadataForm($form_state['values']['form_id'], $form_state, $client);
+        }
+      }
 
-    $output = '';
-    if (($content_model = ContentModel::loadFromObject($this->pid)) !== FALSE) {
-      $output = $content_model->buildEditMetadataForm($this->pid, $this->dsid);
-    }
-
-    if (empty($output)) {
-      // There is no custom function, so just load the standard QDC form.
+      module_load_include('inc', 'fedora_repository', 'formClass');
       $metaDataForm = new formClass();
-      //currently we only edit the dc metadata.  If you defined a custom form with a custom handler you are sol for now.
-      return $metaDataForm->createMetaDataForm($this->pid, $this->dsid, $client);
+      $return_value = $metaDataForm->updateMetaData($form_state['values']['form_id'], $form_state['values'], $client);
+      $form_state['redirect'] = $base_url . '/fedora/repository/' . $form_state['values']['pid'];
+
+      return $return_value;
     }
-    return $output;
   }
 
 }

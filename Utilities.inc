@@ -8,7 +8,7 @@
  * Defines useful constants for this modules as well as helper functions that don't
  * really belong anywhere else.
  */
-define(STORAGE_KEY, 'islandora_form_builder');
+define('STORAGE_KEY', 'islandora_form_builder');
 
 /**
  * Sets up the bread crumbs for drupal.
