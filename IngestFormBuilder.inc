@@ -206,25 +206,7 @@ class IngestFormBuilder implements FormBuilderInterface {
     $content_model_pid = ContentModel::getPidFromIdentifier($form_values['models']);
     $content_model_dsid = ContentModel::getDSIDFromIdentifier($form_values['models']);
     $form_generator = new FormGenerator($content_model_pid, $content_model_dsid);
-    $form = $form_generator->generateForm('full');
-    return $form;
-    var_dump($form);
-    exit();
-
-    $content_model = ContentModel::loadFromModel($content_model_pid, $content_model_dsid);
-
-    //
-    if ($content_model !== FALSE) {
-      $form = array();
-      $form = $content_model->buildIngestForm($form, $this->formState); // TODO handle this without the content model.
-      if ($form === FALSE) {
-        drupal_set_message(t("Error Building Ingest Form."), 'error');
-        foreach (ContentModel::$errors as $error) {
-          drupal_set_message($error, 'error');
-        }
-      }
-    }
-    
+    $form = $form_generator->generateForm('full'); // TODO get from user .
     $form['submit'] = array(
       '#type' => 'submit',
       '#value' => t('Ingest'),

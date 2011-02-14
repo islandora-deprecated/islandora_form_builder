@@ -2,63 +2,47 @@
 
 // $Id$
 
-/* File: islandora_form_builder_elements.module
- * Author: 
- * 
- * Description: 
+/**
+ * @file
  *
  */
 
-//-------------------------------------------------------------------------------
-// islandora_form_builder_elements_elements
-// Params: None.
-// Returns: An array of form elements types. 
-//
-// Implementation of hook_elements():
-// Register the duration widget with the Forms API and set default values.
-//-------------------------------------------------------------------------------  
+/**
+ * Implementation of hook_elements
+ * 
+ * @return array
+ *   An array containing all the support form elements.
+ */
 function islandora_form_builder_elements_elements() {
   $type['fieldset'] = array(
     '#input' => TRUE,
     '#process' => array('ife_fieldset_process'),
   );
-
   $type['textfield'] = array(
     '#input' => TRUE,
     '#sticky' => FALSE,
     '#process' => array('ife_sticky_textfield_process'),
   );
-
   $type['textarea'] = array(
     '#input' => TRUE,
     '#sticky ' => FALSE,
     '#process' => array('ife_sticky_textarea_process'),
   );
-
   $type['select'] = array(
     '#input' => TRUE,
     '#sticky ' => FALSE,
     '#process' => array('ife_sticky_select_process'),
   );
-
   $type['list'] = array(
     '#input' => TRUE,
     '#element_validate' => array('ife_list_validate'),
     '#process' => array('ife_list_process'),
     '#sticky' => FALSE,
   );
-
   $type['other_select'] = array(
     '#input' => TRUE,
     '#process' => array('ife_other_select_process'),
   );
-
-  $type['copyright'] = array(
-    '#input' => TRUE,
-    '#process' => array('ife_copyright_process'),
-    '#element_validate' => array('ife_copyright_validate'),
-  );
-
   $type['filechooser'] = array(
     '#input' => TRUE,
     '#path' => '',
@@ -67,35 +51,10 @@ function islandora_form_builder_elements_elements() {
     '#process' => array('ife_filechooser_process'),
     '#element_validate' => array('ife_filechooser_validate'),
   );
-
-  $type['person'] = array(
-    '#input' => TRUE,
-    '#process' => array('ife_person_process'),
-    '#default_value' => array('name' => '', 'date' => '', 'subject' => '', 'role' => ''),
-  );
-
-  $type['organization'] = array(
-    '#input' => TRUE,
-    '#process' => array('ife_org_process'),
-    '#default_value' => array('organization' => '', 'date' => '', 'subject' => '', 'role' => ''),
-  );
-
-  $type['conference'] = array(
-    '#input' => TRUE,
-    '#process' => array('ife_conf_process'),
-    '#default_value' => array('conference' => '', 'date' => '', 'subject' => '', 'role' => ''),
-  );
-
-  $type['people'] = array(
-    '#input' => TRUE,
-    '#process' => array('ife_people_process'),
-  );
-
   $type['datepicker'] = array(
     '#input' => TRUE,
     '#process' => array('ife_datepicker_process'),
   );
-
   $type['tabpanel'] = array(
     '#input' => TRUE,
     '#process' => array('ife_tabpanel_process'),

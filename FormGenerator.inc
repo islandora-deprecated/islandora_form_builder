@@ -22,7 +22,10 @@ class FormGenerator {
     $this->contentModel = ContentModel::loadFromModel($content_model_pid, $content_model_dsid);
     $xml = $this->contentModel->dumpXml();
     $this->formDefinition = new DOMDocument();
-    $this->formDefinition->loadXML($xml);
+    //$this->formDefinition->loadXML($xml);
+    $filename = drupal_get_path('module', 'islandora_form_builder') . '/test.xml';
+    $this->formDefinition->load($filename);
+    // End Convience.
     $this->xpath = new DOMXPath($this->formDefinition);
     $this->xpath->registerNamespace('cm', "http://www.islandora.ca");
     $this->formElementTypes = $this->getFormElementTypes();
@@ -40,13 +43,7 @@ class FormGenerator {
     $result = $xpath->query('//xsd:complexType[@name=\'formElementType\']/xsd:choice/xsd:element/@name');
     for ($i = 0; $i < $result->length; $i++) {
       $node = $result->item($i);
-      $type = $node->value;
-      $types[$type] = array();
-      // Find all form controls for each form element type
-      $properties = $xpath->query('../xsd:complexType/xsd:all/xsd:element/@name', $node);
-      for ($j = 0; $j < $properties->length; $j++) {
-        $types[$type][] = $properties->item($j)->value;
-      }
+      $types[] = $node->value;
     }
     return $types;
   }
@@ -86,26 +83,17 @@ class FormGenerator {
     $result = $this->xpath->query('child::*', $form_element);
     for ($i = 0; $i < $result->length; $i++) {
       $child = $result->item($i);
-      if ($this->isFormAttributeOfType($type, $child)) {
-        list($name, $value) = $this->createDrupalFormControl($child);
-        $form[$name] = $value;
-      }
+      list($name, $value) = $this->createDrupalFormControl($child);
+      $form[$name] = $value;
     }
     return $form;
   }
 
-  private function isFormAttributeOfType($type, $form_element) {
-    if (array_search($form_element->tagName, $this->formElementTypes[$type]) !== FALSE) {
-      return TRUE;
-    }
-    return FALSE;
-  }
-
   private function createDrupalFormControl(&$form_element) {
     $name = $form_element->tagName;
-    $method_name = 'create' . $name . 'FormControl';
+    $method_name = 'create' . str_replace('_', '', $name) . 'FormControl';
     if (method_exists($this, $method_name)) {
-      return call_user_method($method_name, $this, $form_element);
+      return call_user_func(array(&$this, $method_name), $form_element);
     }
     else { // Default case the text in the element is its value.
       return array("#$name", $form_element->textContent);
@@ -137,6 +125,20 @@ class FormGenerator {
       $options = array_merge(array(NULL => $select_message), $options);
     }
     return array('#options', $options);
+  }
+
+  private function createFormBuilderFormControl(&$form_element) {
+    $form_builder = array();
+    $path = $this->xpath->query('//cm:path', $form_element)->item(0);
+    $full = $path->getAttribute('full') == 'true';
+    $form_builder['path'] = array($path->textContent, $full);
+    if($full) {
+      $parent_path = $this->xpath->query('//cm:parent_path', $form_element)->item(0);
+      $form_builder['parent_path'] = array($parent_path->textContent, $parent_path->getAttribute('force_create_if_not_found') == 'true');
+    }
+    $xml = $this->xpath->query('//cm:xml', $form_element)->item(0);
+    $form_builder['xml'] = $xml->textContent;
+    return array('#form_builder', $form_builder);
   }
 
 }

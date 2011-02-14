@@ -1,0 +1,272 @@
+<content_model xmlns="http://www.islandora.ca" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" name="Standard_Map" xsi:schemaLocation="http://www.islandora.ca http://formbuilder.dev/sites/formbuilder.dev/modules/fedora_repository/islandoracm.xsd">
+    <mimetypes>
+        <type>image/tiff</type>
+        <type>image/tif</type>
+    </mimetypes>
+    <ingest_rules>
+        <rule>
+            <applies_to>image/tiff</applies_to>
+            <applies_to>image/tif</applies_to>
+            <ingest_methods>
+                <ingest_method class="ImageManipulation" dsid="JP2" file="plugins/ImageManipulation.inc" method="createJP2" modified_files_ext="jp2" module=""/>
+            </ingest_methods>
+        </rule>
+    </ingest_rules>
+    <datastreams>
+        <datastream dsid="JPG">
+            <display_method class="ShowMapStreamsInFieldSets" file="plugins/map_viewer.inc" method="showJPG" module=""/>
+        </datastream>
+        <datastream dsid="JP2"/>
+        <datastream dsid="FULL_SIZE"/>
+        <datastream dsid="FULL_JPG"/>
+        <datastream dsid="DC"/>
+        <datastream display_in_fieldset="true" dsid="MODS"/>
+    </datastreams>
+    <forms>
+        <form name="full">
+            <hidden>
+                <value>foobar</value>
+                <form_builder>
+                    <xpath>
+                        <path full="true">/mods:mods</path>
+                        <parent_path force_create_if_not_found="true">/mods:mods</parent_path>
+                        <xml>&lt;mods:mods&gt;&lt;mods:titleInfo&gt;&lt;/mods:titleInfo&gt;&lt;/mods:mods&gt;</xml>
+                    </xpath>
+                </form_builder>
+            </hidden>
+            <textfield>
+                <title>Title</title>
+                <form_builder>
+                    <xpath>
+                        <path full="true">/mods:mods/mods:titleInfo/mods:title[1]</path>
+                        <parent_path force_create_if_not_found="false">/mods:mods/mods:titleInfo</parent_path>
+                        <xml>&lt;mods:title&gt;%value%&lt;/mods:title&gt;</xml>
+                    </xpath>
+                </form_builder>
+            </textfield>
+        </form>
+    </forms>
+    <ingest_form dsid="MODS" page="2">
+        <form_builder_method class="ModsFormBuilder" file="plugins/ModsFormBuilder.inc" handler="handleIngestForm" method="buildIngestForm" module="fedora_repository"/>
+        <form_elements>
+            <element label="Identifier" name="mods_identifier" required="false" type="textfield">
+                <description>Please enter a standard number assigned to the resource.  This field is optional, as an identifier in the Handle system will be automatically assigned.</description>
+                <parameters>
+                    <parameter name="#edit_metadata_xpath">/mods:mods/mods:identifier[@type='paro']</parameter>
+                </parameters>
+            </element>
+            <element label="Title" name="mods_title" required="true" type="textfield">
+                <description>A descriptive title of the object.</description>
+                <parameters>
+                    <parameter name="#edit_metadata_xpath">/mods:mods/mods:titleInfo/mods:title</parameter>
+                </parameters>
+            </element>
+            <element label="Creator" name="mods_creator" required="true" type="textfield">
+                <description>Creator or Author</description>
+                <parameters>
+                    <parameter name="#edit_metadata_xpath">/mods:mods/mods:name/mods:namePart</parameter>
+                </parameters>
+            </element>
+            <element label="Format" name="mods_format" required="true" type="select">
+                <description>Choose the format of the original item that was digitized.</description>
+                <parameters>
+                    <parameter name="#sticky">TRUE</parameter>
+                    <parameter name="#edit_metadata_xpath">/mods:mods/mods:typeOfResource</parameter>
+                </parameters>
+                <authoritative_list>
+                    <item>text</item>
+                    <item>cartographic</item>
+                    <item>notated music</item>
+                    <item>sound recording</item>
+                    <item>sound recording - musical</item>
+                    <item>sound-recording - non musical</item>
+                    <item>still image</item>
+                    <item>moving image</item>
+                    <item>three dimensional object</item>
+                    <item>software</item>
+                    <item>multimedia</item>
+                    <item>mixed material</item>
+                </authoritative_list>
+            </element>
+            <element label="Description" name="mods_description" required="true" type="textarea">
+                <description>A summary of the content of the resource.</description>
+                <parameters>
+                    <parameter name="#sticky">TRUE</parameter>
+                    <parameter name="#edit_metadata_xpath">/mods:mods/mods:abstract</parameter>
+                </parameters>
+            </element>
+            <element label="Rights" name="mods_rights" required="true" type="textarea">
+                <description>Information about intellectual property rights, copyright, and various property rights.</description>
+                <parameters>
+                    <parameter name="#sticky">TRUE</parameter>
+                    <parameter name="#edit_metadata_xpath">/mods:mods/mods:accessCondition</parameter>
+                </parameters>
+            </element>
+            <element label="Note Admin" name="mods_note_admin" required="false" type="textarea">
+                <description>Add a note about the digital object.</description>
+                <parameters>
+                    <parameter name="#edit_metadata_xpath">/mods:mods/mods:note[@type='admin']</parameter>
+                </parameters>
+            </element>
+            <element label="Subject(s)" name="subject" required="false" type="fieldset">
+                <description>&lt;b&gt;&lt;font color="red"&gt;*&lt;/font&gt;&lt;/b&gt; At least one subject is required.  Please expand the appropriate fieldset(s) below and fill in the necessary information. </description>
+            </element>
+            <element label="Spatial" name="subject][place" required="false" type="fieldset">
+                <description>Is the digital object about a place?  If yes, then fill in to the most specific level that the object is about.</description>
+                <parameters>
+                    <parameter name="#collapsible">TRUE</parameter>
+                    <parameter name="#collapsed">TRUE</parameter>
+                </parameters>
+            </element>
+            <element label="Geographic" name="subject][place][mods_geographic" required="false" type="list">
+                <parameters>
+                    <parameter name="#sticky">TRUE</parameter>
+                    <parameter name="#edit_metadata_xpath">/mods:mods/mods:subject/mods:hierarchicalGeographic</parameter>
+                </parameters>
+            </element>
+            <element label="Temporal" name="subject][time" required="false" type="fieldset">
+                <description>Is the digital object about a time? If yes then fill in to the most specific level that the object is about.</description>
+                <parameters>
+                    <parameter name="#collapsible">TRUE</parameter>
+                    <parameter name="#collapsed">TRUE</parameter>
+                    <parameter name="#edit_metadata_xpath">/mods:mods/mods:subject/mods:temporal</parameter>
+                </parameters>
+            </element>
+            <element label="Date" name="subject][time][mods_date" required="false" type="list">
+                <description>Format is MM/DD/YYYY.   Please enter the most specific level possible.  If a month or day is unknown,  enter '??'.   If entering a range or century, enter as a free-form text field.</description>
+                <parameters>
+                    <parameter name="#edit_metadata_xpath">/mods:mods/mods:subject/mods:temporal</parameter>
+                </parameters>
+            </element>
+            <element label="Person" name="subject][person" required="false" type="fieldset">
+                <description>Is the digital object about a person? If yes then please include:</description>
+                <parameters>
+                    <parameter name="#collapsible">TRUE</parameter>
+                    <parameter name="#collapsed">TRUE</parameter>
+                </parameters>
+            </element>
+            <element label="Personal Name" name="subject][person][mods_fullname" required="false" type="list">
+                <description>Please enter a semicolon separated list of topics, or enter them one at a time and press enter between each.</description>
+                <parameters>
+                    <parameter name="#sticky">TRUE</parameter>
+                    <parameter name="#edit_metadata_xpath">/mods:mods/mods:subject/mods:name[@type='personal']/mods:namePart</parameter>
+                </parameters>
+            </element>
+            <element label="Corporate Name" name="subject][person][mods_corporate_name" required="false" type="list">
+                <description>Please enter a semicolon separated list of topics, or enter them one at a time and press enter between each.</description>
+                <parameters>
+                    <parameter name="#sticky">TRUE</parameter>
+                    <parameter name="#edit_metadata_xpath">/mods:mods/mods:subject/mods:name[@type='corporate']/mods:namePart</parameter>
+                </parameters>
+            </element>
+            <element label="Topic" name="subject][topic" required="false" type="fieldset">
+                <description>Is the digital object about a thing?</description>
+                <parameters>
+                    <parameter name="#collapsed">TRUE</parameter>
+                    <parameter name="#collapsible">TRUE</parameter>
+                </parameters>
+            </element>
+            <element label="Topics" name="subject][topic][mods_topics" required="false" type="list">
+                <description>Please enter a semicolon separated list of topics, or enter then one at a time and press enter between each.</description>
+                <parameters>
+                    <parameter name="#sticky">TRUE</parameter>
+                    <parameter name="#edit_metadata_xpath">/mods:mods/mods:subject/mods:topic</parameter>
+                </parameters>
+            </element>
+            <element label="Title" name="subject][title" required="false" type="fieldset">
+                <description>Is the digital object about another title? </description>
+                <parameters>
+                    <parameter name="#collapsible">TRUE</parameter>
+                    <parameter name="#collapsed">TRUE</parameter>
+                </parameters>
+            </element>
+            <element label="Title" name="subject][title][mods_subjtitle" required="false" type="textfield">
+                <description>The other title that this object is about.</description>
+                <parameters>
+                    <parameter name="#sticky">TRUE</parameter>
+                    <parameter name="#edit_metadata_xpath">/mods:mods/mods:subject/mods:titleInfo/mods:title</parameter>
+                </parameters>
+            </element>
+            <element label="Language(s)" name="mods_language" required="false" type="list">
+                <description>Please identify the language(s) of the resource.  Find as you type.</description>
+                <parameters>
+                    <parameter name="#sticky">TRUE</parameter>
+                    <parameter name="#autocomplete_path">autocomplete_language</parameter>
+                    <parameter name="#edit_metadata_xpath">/mods:mods/mods:language/mods:languageTerm</parameter>
+                </parameters>
+            </element>
+            <element label="Entities" name="mods_people" required="false" type="people">
+                <description>Please enter a list of entities that are related to this object by the specified roles.</description>
+                <parameters>
+                    <parameter name="#collapsible">TRUE</parameter>
+                    <parameter name="#collapsed">TRUE</parameter>
+                </parameters>
+            </element>
+            <element label="Physical Location" name="physlocation" required="false" type="fieldset">
+                <description>Physical location of the object.</description>
+                <parameters>
+                    <parameter name="#collapsible">TRUE</parameter>
+                    <parameter name="#collapsed">TRUE</parameter>
+                </parameters>
+            </element>
+            <element label="Physical Location" name="physlocation][mods_physicalLocation" required="false" type="textarea">
+                <parameters>
+                    <parameter name="#sticky">TRUE</parameter>
+                    <parameter name="#edit_metadata_xpath">/mods:mods/mods:location/mods:physicalLocation</parameter>
+                </parameters>
+            </element>
+            <element label="Shelf Locator" name="physlocation][mods_shelfLocator" required="false" type="textfield">
+                <description>optional.  eg Archives Number.</description>
+                <parameters>
+                    <parameter name="#sticky">TRUE</parameter>
+                    <parameter name="#edit_metadata_xpath">/mods:mods/mods:location/mods:shelfLocator</parameter>
+                </parameters>
+            </element>
+            <element label="Publication/Origin Information" name="pubinfo" required="false" type="fieldset">
+                <description>Enter information if applicable about the publication/release/copyright of the original (not the digitized) object.</description>
+                <parameters>
+                    <parameter name="#collapsible">TRUE</parameter>
+                    <parameter name="#collapsed">TRUE</parameter>
+                </parameters>
+            </element>
+            <element label="Place" name="pubinfo][mods_pubinfo_place" required="false" type="textfield">
+                <parameters>
+                    <parameter name="#edit_metadata_xpath">/mods:mods/mods:originInfo/mods:place/mods:placeTerm[@type='text']</parameter>
+                </parameters>
+            </element>
+            <element label="Publisher" name="pubinfo][mods_pubinfo_publisher" required="false" type="textfield">
+                <parameters>
+                    <parameter name="#edit_metadata_xpath">/mods:mods/mods:originInfo/mods:publisher</parameter>
+                </parameters>
+            </element>
+            <element label="Date Created" name="pubinfo][mods_date_created" required="false" type="datepicker">
+                <parameters>
+                    <parameter name="#edit_metadata_xpath">/mods:mods/mods:originInfo/mods:dateCreated</parameter>
+                </parameters>
+            </element>
+            <element label="Date Captured" name="pubinfo][mods_date_captured" required="false" type="datepicker">
+                <description>Format is MM/DD/YYYY.   Please enter the most specific level possible.  If a month or day is unknown,  enter '??'.</description>
+                <parameters>
+                    <parameter name="#edit_metadata_xpath">/mods:mods/mods:originInfo/mods:dateCaptured</parameter>
+                </parameters>
+            </element>
+            <element label="Edition" name="pubinfo][mods_pubinfo_edition" required="false" type="textfield">
+                <parameters>
+                    <parameter name="#edit_metadata_xpath">/mods:mods/mods:originInfo/mods:edition</parameter>
+                </parameters>
+            </element>
+            <element label="Language of Cataloging" name="mods_languageOfCataloging" required="false" type="textfield">
+                <description>Language of Cataloging</description>
+                <parameters>
+                    <parameter name="#edit_metadata_xpath">/mods:mods/mods:recordInfo/mods:languageOfCataloging/mods:languageTerm[@authority='iso639-2']</parameter>
+                </parameters>
+            </element>
+            <element label="Ingest File" name="ingest-file-location" required="false" type="filechooser">
+                <description>Please select a file to ingest. </description>
+                <parameters>
+                    <parameter name="#exclude_from_edit_metadata">TRUE</parameter>
+                </parameters>
+            </element>
+        </form_elements>
+    </ingest_form>
+</content_model>
