@@ -34,16 +34,28 @@
                     </xpath>
                 </form_builder>
             </hidden>
-            <textfield>
-                <title>Title</title>
+            <tabpanel>
+                <title>Mods</title>
                 <form_builder>
                     <xpath>
-                        <path full="true">/mods:mods/mods:titleInfo/mods:title[1]</path>
-                        <parent_path force_create_if_not_found="false">/mods:mods/mods:titleInfo</parent_path>
-                        <xml>&lt;mods:title&gt;%value%&lt;/mods:title&gt;</xml>
+                        <path full="true">/mods:mods/mods:titleInfo</path>
+                        <parent_path force_create_if_not_found="false">/mods:mods</parent_path>
+                        <element>mods:titleInfo</element>
                     </xpath>
                 </form_builder>
-            </textfield>
+                <content>
+                    <textfield>
+                        <title>Title</title>
+                        <form_builder>
+                            <xpath>
+                                <path full="false">/mods:mods/mods:titleInfo/mods:title[1]</path>
+                                <parent_path force_create_if_not_found="false">/mods:mods/mods:titleInfo</parent_path>
+                                <xml>&lt;mods:title&gt;%value%&lt;/mods:title&gt;</xml>
+                            </xpath>
+                        </form_builder>
+                    </textfield>
+                </content>
+            </tabpanel>
         </form>
     </forms>
     <ingest_form dsid="MODS" page="2">

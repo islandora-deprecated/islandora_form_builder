@@ -201,6 +201,7 @@ class IngestFormBuilder implements FormBuilderInterface {
    *
    */
   private function getFormPageTwo() {
+    module_load_include('inc', 'fedora_repository', 'ContentModel');
     module_load_include('inc', 'islandora_form_builder', 'FormGenerator');
     $form_values = $this->formState['values'];
     $content_model_pid = ContentModel::getPidFromIdentifier($form_values['models']);

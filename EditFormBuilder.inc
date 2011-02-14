@@ -12,7 +12,7 @@ module_load_include('inc', 'islandora_form_builder', 'FormBuilderInterface');
 /**
  *
  */
-class IngestFormBuilder implements FormBuilderInterface {
+class EditFormBuilder implements FormBuilderInterface {
 
   /**
    * Drupal persistance form storage, specifically the index STORAGE_KEY where all

@@ -105,7 +105,7 @@ class FormGenerator {
     $result = $this->xpath->query('child::*', $form_element);
     for ($i = 0; $i < $result->length; $i++) {
       $child = $result->item($i);
-      $content[] = $this->createDrupalFormElement($child);
+      $content[0][] = $this->createDrupalFormElement($child);
     }
     return array('content', $content);
   }
@@ -136,8 +136,18 @@ class FormGenerator {
       $parent_path = $this->xpath->query('//cm:parent_path', $form_element)->item(0);
       $form_builder['parent_path'] = array($parent_path->textContent, $parent_path->getAttribute('force_create_if_not_found') == 'true');
     }
-    $xml = $this->xpath->query('//cm:xml', $form_element)->item(0);
-    $form_builder['xml'] = $xml->textContent;
+    $xml = $this->xpath->query('//cm:xml', $form_element);
+    if($xml->length == 1) {
+      $form_builder['xml'] = $xml->textContent;
+    }
+    $element = $this->xpath->query('//cm:element', $form_element);
+    if($element->length == 1) {
+      $form_builder['element'] = $element->textContent;
+    }
+    $attribute = $this->xpath->query('//cm:attribute', $form_element);
+    if($attribute->length == 1) {
+      $form_builder['attribute'] = $attribute->textContent;
+    }
     return array('#form_builder', $form_builder);
   }
 

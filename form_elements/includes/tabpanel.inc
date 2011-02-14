@@ -18,7 +18,7 @@
  *   $clicked_button.
  */
 function &ife_get_tabpanel_values($clicked_button) {
-  $parents = $clicked_button['#array_parents'];
+  $parents = $clicked_button['#parents'];
   $depth = count($parents) - 2;
   $point = &$_POST;
   for ($i = 0; $i < $depth; $i++) {
@@ -83,7 +83,7 @@ function _ife_remove_tabpanel_from_form(&$form, $clicked_button) {
  * Helper function for ife_remove_tabpanel_values
  */
 function _ife_remove_tabpanel_values(&$form, $clicked_button) {
-  $content = ife_get_tabpanel_values($clicked_button);
+  $content = &ife_get_tabpanel_values($clicked_button);
   $count = count($content);
   $index = $clicked_button['#tab'];
   for ($i = $index; $i < $count; $i++) {
@@ -288,7 +288,7 @@ function ife_tabpanel_ahah() {
  */
 function theme_tabpanel($element) {
   global $base_url;
-  $path = drupal_get_path('module', 'islandora_form_elements');
+  $path = drupal_get_path('module', 'islandora_form_builder_elements');
   drupal_add_js($path . '/js/jquery-ui-1.8.7.custom.min.js');
   drupal_add_js($path . '/js/tabpanel_ahah.js');
   drupal_add_css($path . '/css/ui-lightness/jquery-ui-1.8.7.custom.css');
@@ -301,6 +301,7 @@ function theme_tabpanel($element) {
 function theme_tabpanel_items($form) {
   $name = $form['#name'];
   $title = $form['#title'];
+  // Headers
   $count = 1;
   $output = '<ul>';
   $output .= '<li><a href="#' . $name . '-0">' . $title . '</a><span id="add-' . $name . '" class="ui-icon ui-icon-circle-plus" style="float: left; margin: 0.4em 0.2em 0 0; cursor: pointer;">' . $form[0]["add-tab"]['#id'] . '</span></li>';
@@ -310,6 +311,7 @@ function theme_tabpanel_items($form) {
     $count++;
   }
   $output .= '</ul>';
+  // Content
   $count = 0;
   while (isset($form[$count])) {
     $output .= '<div id="' . $name . '-' . $count . '">';
@@ -317,6 +319,59 @@ function theme_tabpanel_items($form) {
     $output .= '</div>';
     $count++;
   }
-  $count = 1;
   return $output;
 }
+
+/**
+ *
+ * @param <type> $element
+ * @param <type> $edit
+ * @param <type> $form_state
+ * @return string 
+ */
+function ife_tabpanel_process($form, $edit, &$form_state) {
+  $name = t(implode('-', $form['#array_parents'])); // Unique
+  $wrapper = 'ife-' . $name . '-wrapper';
+  $form['#tree'] = TRUE;
+  $form['#prefix'] = '<div class="clear-block" id="' . $wrapper . '">';
+  $form['#suffix'] = '</div>';
+
+  $form['content']['#title'] = $form['#title'];
+  $form['content']['#theme'] = 'tabpanel_items';
+  $form['content']['#name'] = $name;
+  $form['content'][0]['add-tab'] = array(
+    '#type' => 'submit',
+    '#weight' => 4,
+    '#size' => 30,
+    '#attributes' => array('style' => 'display:none'),
+    '#value' => t('ife-add-' . $name), // Unique
+    '#action' => 'add',
+    '#ahah' => array(
+      'path' => 'ife/tabpanel_ahah',
+      'wrapper' => $wrapper,
+      'method' => 'replace',
+      'effect' => 'fade'
+    ),
+  );
+  $count = 1; // Can't remove the first one.
+  while (isset($form['content'][$count])) {
+    $form['content'][$count]['remove-tab'] = array(
+      '#type' => 'submit',
+      '#weight' => 4,
+      '#size' => 30,
+      '#attributes' => array('style' => 'display:none'),
+      '#value' => t('ife-remove-' . $name . '-' . $count), // Unique
+      '#action' => 'remove',
+      '#tab' => $count,
+      '#ahah' => array(
+        'path' => 'ife/tabpanel_ahah',
+        'wrapper' => $wrapper,
+        'method' => 'replace',
+        'effect' => 'fade'
+      ),
+    );
+    $count++;
+  }
+  return $form;
+}
+
