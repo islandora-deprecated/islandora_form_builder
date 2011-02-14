@@ -308,13 +308,12 @@ class IngestFormBuilder implements FormBuilderInterface {
     $content_model_dsid = ContentModel::getDSIDFromIdentifier($form_values['models']);
     $error = TRUE;
     $should_redirect = TRUE;
-    $redirect_to = $base_url . "/fedora/repository/{$form_values['collection_pid']}";
-    $collection_policy = CollectionPolicy::loadFromCollection($form_values['collection_pid']);
+    $redirect_to = $base_url . "/fedora/repository/{$this->collectionPid}";
+    $collection_policy = CollectionPolicy::loadFromCollection($this->collectionPid);
     if ($collection_policy === FALSE) {
       $this->formState['redirect'] = ($error) ? ' ' : $redirect_to;
       return;
     }
-
     $relationship = $collection_policy->getRelationship();
     $content_model = ContentModel::loadFromModel($content_model_pid, $content_model_dsid);
     if ($content_model === FALSE) {
@@ -326,7 +325,18 @@ class IngestFormBuilder implements FormBuilderInterface {
     $form_values['pid'] = $pid;
     $form_values['content_model_pid'] = $content_model_pid;
     $form_values['relationship'] = $relationship;
+
+    // Custom stuff..
+    $transform = drupal_get_path('module', 'fedora_repository') . '/workflow_client/xsl/mods_to_dc.xsl';
+    module_load_include('inc', 'islandora_form_builder', 'FoxmlForm');
+    module_load_include('inc', 'islandora_form_builder', 'ModsDocument');
+    $foxml = new FoxmlDocument($form_values);
+    $mods = new ModsDocument($form_values);
+    $foxml->ingest();
+    
     $error = (!$content_model->execFormHandler($form_values));
+
+    // End custom stuff..
     $_SESSION['fedora_ingest_files'] = ''; //empty this variable
     $attributes = $content_model->getIngestFormAttributes();
     $should_redirect = $attributes['redirect'];

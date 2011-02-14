@@ -3,6 +3,8 @@
 // $Id$
 
 /**
+ * @file
+ * 
  * Repersents a Fedora based XML datastream, extends DOMDocument.
  *
  * This class should never be instantiated. It is meant to provide most of the
