@@ -201,9 +201,19 @@ class IngestFormBuilder implements FormBuilderInterface {
    *
    */
   private function getFormPageTwo() {
-    $content_model_pid = ContentModel::getPidFromIdentifier($this->formState['values']['models']);
-    $content_model_dsid = ContentModel::getDSIDFromIdentifier($this->formState['values']['models']);
+    module_load_include('inc', 'islandora_form_builder', 'FormGenerator');
+    $form_values = $this->formState['values'];
+    $content_model_pid = ContentModel::getPidFromIdentifier($form_values['models']);
+    $content_model_dsid = ContentModel::getDSIDFromIdentifier($form_values['models']);
+    $form_generator = new FormGenerator($content_model_pid, $content_model_dsid);
+    $form = $form_generator->generateForm('full');
+    return $form;
+    var_dump($form);
+    exit();
+
     $content_model = ContentModel::loadFromModel($content_model_pid, $content_model_dsid);
+
+    //
     if ($content_model !== FALSE) {
       $form = array();
       $form = $content_model->buildIngestForm($form, $this->formState); // TODO handle this without the content model.
@@ -214,13 +224,14 @@ class IngestFormBuilder implements FormBuilderInterface {
         }
       }
     }
+    
     $form['submit'] = array(
       '#type' => 'submit',
       '#value' => t('Ingest'),
       '#prefix' => t('Please be patient. Once you click next there may be a number of files created. ' .
           'Depending on your content model this could take a few minutes to process.<br />')
     );
-    break;
+    return $form;
   }
 
   /**
