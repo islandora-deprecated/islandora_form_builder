@@ -13,6 +13,11 @@
  * Specifically the forms that this class processes must be created by the
  * IngestFormBuilder/EditFormBuilders classes or one of thier decendants.
  */
+module_load_include('inc', 'islandora_form_builder', 'FormPreprocessor');
+
+/**
+ *
+ */
 class XmlDatastreamFormDocument extends DOMDocument {
 
   /**
@@ -20,6 +25,11 @@ class XmlDatastreamFormDocument extends DOMDocument {
    * @var array
    */
   protected $form;
+  /**
+   * The simplified preprocessed form.
+   * @var array
+   */
+  protected $preprocessedForm;
   /**
    * The drupal form_state for the form the user has submitted.
    * @var array
@@ -69,11 +79,12 @@ class XmlDatastreamFormDocument extends DOMDocument {
    *   Namespaces needed to be registerd for xpath to work correctly.
    */
   private function initMembers(&$form, &$form_state, &$namespaces_to_register) {
-    $this->form = &$form;
     $this->formState = &$form_state;
     $this->storage = &$form_state['storage']['form_builder']; // Storage specific to form builder.
     $this->formValues = &$form_state['values']['form_builder'];
-    $this->form = &$form['form_builder'];
+    $this->form = &$form[FORM_ROOT];
+    $form_preprocessor = new FormPreprocessor($this->form, $this->formValues);
+    $this->preprocessedForm = $form_preprocessor->process();
     $this->formatOutput = TRUE;
     $this->xpath = new DOMXPath($this);
     $this->nameSpaces = $namespaces_to_register;
@@ -95,7 +106,7 @@ class XmlDatastreamFormDocument extends DOMDocument {
       $this->loadXML($document->saveXML()); // Is importing quicker?
     }
     else {
-      $this->createDocumentFromForm($this->form, $this->formValues, $this);
+      $this->createDocumentFromForm($this->preprocessedForm, $this);
     }
   }
 
@@ -134,144 +145,95 @@ class XmlDatastreamFormDocument extends DOMDocument {
 
   /**
    * Creates this document from submitted form values and any relevant stored data.
-   *
-   * @param array $form
-   * @param array $form_values
-   * @param DOMNode $parent_node
    */
-  private function createDocumentFromForm(&$form, &$form_values, $parent_node) {
+  private function createDocumentFromForm(&$form, &$parent_node) {
     foreach ($form as $index => $form_element) { // This loop may change based on values ...
-      if (is_numeric($index)) {
-        $form_value = $form_values[$index];
-        if ($this->canFormElementBeProcessed($form, $form_value)) {
-          $node = $this->processFormElementAndValue($form_element, $form_value, $parent_node);
-          if (isset($form_element['content'])) {
-            $this->createDocumentFromForm($form_element['content'], $value['content'], $node);
-          }
-        }
+      $node = $this->createNodeFromForm($form_element, $parent_node);
+      foreach ($form_element['#children'] as $child) {
+        $this->createDocumentFromForm($child, $node);
       }
     }
   }
 
   /**
-   * Determins if a form element and value pair can be processed.
+   * Creates a node.
    *
    * @param array $form
-   * @param array $form_value
-   * @return boolean
-   *   TRUE if this the element form, can be processed, FALSE otherwise.
-   */
-  private function canFormElementBeProcessed(&$form, &$form_value) {
-    $properties = &$this->getFormBuilderProperties($form);
-    $value_is_valid_string = is_string($form_value) && (!$properties['#ignore_empty_values']) ? TRUE : $form_value !== '';
-    $value_is_array = is_array($form_value);
-    $has_xpath = isset($properties['#xpath']);
-
-    $form_value = trim($form_value);
-    $value_is_valid = is_string($form_value) && (!$properties['#ignore_empty_values']) ? TRUE : $form_value !== '';
-    return $has_xpath && $value_is_valid;
-  }
-
-  /**
-   * Get properties only relevent to form builder.
-   *
-   * @param array $form
-   *   Drupal form element;
-   * @return array
-   *   Returns an array of Form Builder properties, if found otherwise FALSE is returned.
-   */
-  private function getFormBuilderProperties(&$form) {
-    return is_array($form['#form_builder']) ? $form['#form_builder'] : FALSE;
-  }
-
-  /**
-   * Can create more than one DOMNode form certian element types such as list, but most others
-   * Only create one DOMNode.
-   * 
-   * @param array $form
-   * @param array $form_value
    * @param DOMNode $parent_node
    * @return DOMNode
    */
-  private function processFormElementAndValue(&$form, &$form_value, $parent_node) {
-    $properties = &$this->getFormBuilderProperties($form);
-    list($path, $is_full_path) = $properties['#xpath'];
-    list($parent_path, $force_create) = $properties['#parent_xpath'];
-    $xml = $properties['#xml'];
-
-    // Get proper value or values
-    $value = $this->getTypeDependantValue($form['#type'], $form_value);
-    $single_value = is_string($value) && $value != '';
-    $multiple_values = is_array($value);
-    $values = $multiple_values ? $value : NULL;
-
-    // Multiple values correspond to a single path per value. Exclusive to lists.
-    if ($multiple_values) {
-      $count = count($values);
-      for ($i = 0; $i < $count; $i++) { // This is exclusively for lists...
-        $nodes = &$this->modifyOrCreateNodes("$path[$i]", $is_full_path, $parent_node, $parent_path, $force_create, $values[$i]);
+  private function createNodeFromForm($form, $parent_node) {
+    $properties = $form['#form_builder'];
+    $value = $form['#value'];
+    list($path, $is_full_path) = $properties['path'];
+    if ($is_full_path) {
+      list($parent_path, $force_create) = $properties['parent_path'];
+    }
+    if ($is_full_path) {
+      $result = $this->xpath->query($path);
+      if ($result->length == 0) { // Create.
+        //parent
+        $result = $this->xpath->query($parent_path);
+        if ($result->length == 0 && $force_create) {
+          $node = $this->createNode($properties, $value);
+          return $parent_node->appendChild($node);
+        }
+        else if ($result->length == 1) {
+          $node = $this->createNode($properties, $value);
+          return $result->item(0)->appendChild($node);
+        }
+      }
+      else if ($result->length == 1) { // Found it.
+        return $this->modifyNode($result->item(0), $value);
       }
     }
     else {
-      $nodes = &$this->modifyOrCreateNodes($path, $is_full_path, $parent_node, $parent_path, $force_create, $value);
+      $result = $this->xpath->query($path, $parent_node);
+      if ($result->length == 0) {
+        $node = $this->createNode($properties, $value);
+        return $parent_node->appendChild($node);
+      }
+      else if ($result->length == 1) {
+        return $this->modifyNode($result->item(0), $value);
+      }
     }
   }
 
   /**
-   * Should eventually be removed and some preprocessor handles this sorta junk...
-   * @param <type> $type
-   * @param <type> $value
-   * @return <type>
-   */
-  private function getTypeDependantValue($type, $value) {
-    switch ($type) {
-      case 'list':
-        return split(';', $value);
-      default:
-        return $value;
-    }
-  }
-
-  /**
-   * Should break up this function a bit...
+   * Creates a node.
    *
-   * @param string $path
-   * @param boolean $is_full_path
-   * @param DOMNode $parent_node
-   * @param string $parent_path
-   * @param boolean $force_create
+   * @param array $properties
    * @param string $value
-   * @return DOMNode[]
+   * @return DOMNode
    */
-  private function modifyOrCreateNodes($path, $is_full_path, $parent_node, $parent_path, $force_create, $value) {
-    $result = ($is_full_path) ? $this->xpath->query($path) : $this->xpath->query($path, $parent_node);
-    if ($result === FALSE) {
-      // Display warning and exit.
+  private function createNode($properties, $value) {
+    $xml = isset($properties['xml']) ? $properties['xml'] : NULL;
+    $element = isset($properties['element']) ? $properties['element'] : NULL;
+    $attribute = isset($properties['attribute']) ? $properties['attribute'] : NULL;
+    if ($xml) {
+      $xml = sttr($xml, '%value%', $value);
+      $node = $this->createDocumentFragment();
+      $node->appendXML($xml);
+      return $node;
     }
-    else if ($result->length != 0) { // Found, For each found element set its value.
-      $modified_nodes = array();
-      for ($i = 0; $i < $result->length; $i++) {
-        $node = $result->item($i);
-        $modified_nodes[] = $this->modifyNode($node, $value);
+    else if ($element) {
+      list($prefix, $name) = explode(':', $element);
+      if (isset($prefix) && isset($name)) {
+        return $this->createElementNS($this->nameSpaces[$prefix], $name, $value);
       }
-      return $modified_nodes;
+      else {
+        return $this->createElement($element, $value);
+      }
     }
-    else { // Not found.
-      $result = $this->xpath->query($parent_path);
-      if ($result === FALSE) {
-        // display a warning, or error.
-        return; // Discontiue processing this element, should probably use exceptions and not render the form ... TODO
+    else { // Attribute
+      list($prefix, $name) = explode(':', $attribute);
+      if (isset($prefix) && isset($name)) {
+        $attribute = $this->createAttributeNS($this->nameSpaces[$prefix], $name);
+        $attribute->value = $value;
       }
-      else if ($result->length != 0) { // Add element to its parents.
-        $created_nodes = array();
-        for ($i = 0; $i < $result->length; $i++) {
-          $parent_node = $result->item($i);
-          $created_nodes[] = $this->createNode($xml, $value, $node);
-        }
-        return $created_nodes;
-      }
-      else if ($force_create) {
-        return array($this->createNode($xml, $values, $this)); // Create root...
+      else {
+        $attribute = $this->createAttribute($attribute, $value);
+        $attribute->value = $value;
       }
     }
   }
@@ -297,24 +259,6 @@ class XmlDatastreamFormDocument extends DOMDocument {
         break;
     }
     return $node;
-  }
-
-  /**
-   * Creates a DOMNode, and appends it to the specified parent.
-   *
-   * @param string $xml
-   *   
-   * @param DOMNode $parent
-   * @param string $value
-   *
-   * @return DOMNode
-   *   The newly created DOMNode.
-   */
-  private function createNode($xml, $parent, $value) {
-    $xml = sttr($xml, '%value%', $value);
-    $node = $this->createDocumentFragment();
-    $node->appendXML($xml);
-    return $parent->appendChild($node);
   }
 
 }

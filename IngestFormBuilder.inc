@@ -29,6 +29,20 @@ class IngestFormBuilder implements FormBuilderInterface {
    */
   protected $collectionPid;
   /**
+   * The pid of the content model that will be used to create the object. This is
+   * only availible after the first form has been validated.
+   *
+   * @var string
+   */
+  protected $contentModelPid;
+  /**
+   * The ID of the XML datastream that the second form repersents. This is
+   * only availible after the first form has been validated.
+   *
+   * @var string
+   */
+  protected $contentModelDsid;
+  /**
    * The label for the collection identified by $collectionPid. Really only used to show the users what
    * collection they are dealing with.
    *
@@ -61,6 +75,8 @@ class IngestFormBuilder implements FormBuilderInterface {
     $this->storage = &$this->formState['storage'][STORAGE_KEY];
     $this->collectionPid = $this->storage['collection_pid'];
     $this->collectionLabel = $this->storage['collection_label'];
+    $this->contentModelPid = isset($this->storage['content_model_pid']) ? $this->storage['content_model_pid'] : NULL;
+    $this->contentModelDsid = isset($this->storage['content_model_dsid']) ? $this->storage['content_model_dsid'] : NULL;
     $this->page = &$this->storage['ingest_form_page'];
   }
 
@@ -225,14 +241,17 @@ class IngestFormBuilder implements FormBuilderInterface {
    */
   public function validateForm(&$form) {
     $this->page == 1 ?
-            $this->validateFormOne() :
+            $this->validateFormOne($form) :
             $this->validateFormTwo($form);
   }
 
   /**
    * Changes the form to page to and rebuilds.
    */
-  private function validateFormOne() {
+  private function validateFormOne(&$form) {
+    $form_values = &$this->formState['values'];
+    $this->storage['content_model_pid'] = ContentModel::getPidFromIdentifier($form_values['models']);
+    $this->storage['content_model_dsid'] = ContentModel::getDSIDFromIdentifier($form_values['models']);
     $this->page++;
     $this->formState['rebuild'] = TRUE;
   }
@@ -254,17 +273,15 @@ class IngestFormBuilder implements FormBuilderInterface {
       $form_values['ingest-file-location'] = $file_object->filepath;
     }
 
-    if (!file_exists($form_values['ingest-file-location'])) {
+    if (empty($form_values['ingest-file-location']) || !file_exists($form_values['ingest-file-location'])) {
       $this->formState['rebuild'] = FALSE;
       return;
     }
     module_load_include('inc', 'fedora_repository', 'ContentModel');
     module_load_include('inc', 'fedora_repository', 'MimeClass');
     $file = $form_values['ingest-file-location'];
-
-    $content_model_pid = ContentModel::getPidFromIdentifier($form_values['models']);
-    $content_model_dsid = ContentModel::getDSIDFromIdentifier($form_values['models']);
-    $content_model = ContentModel::loadFromModel($content_model_pid, $content_model_dsid);
+    
+    $content_model = ContentModel::loadFromModel($this->contentModelPid, $this->contentModelDsid);
     if ($content_model === FALSE) {
       $this->formState['rebuild'] = FALSE;
       return;
@@ -298,14 +315,10 @@ class IngestFormBuilder implements FormBuilderInterface {
    */
   public function submitForm(&$form) {
     global $base_url;
-    global $user;
     module_load_include('inc', 'fedora_repository', 'CollectionClass');
     module_load_include('inc', 'fedora_repository', 'CollectionPolicy');
     module_load_include('inc', 'fedora_repository', 'ContentModel');
-
-    $form_values = &$this->formState['values'];
-    $content_model_pid = ContentModel::getPidFromIdentifier($form_values['models']);
-    $content_model_dsid = ContentModel::getDSIDFromIdentifier($form_values['models']);
+    
     $error = TRUE;
     $should_redirect = TRUE;
     $redirect_to = $base_url . "/fedora/repository/{$this->collectionPid}";
@@ -315,28 +328,26 @@ class IngestFormBuilder implements FormBuilderInterface {
       return;
     }
     $relationship = $collection_policy->getRelationship();
-    $content_model = ContentModel::loadFromModel($content_model_pid, $content_model_dsid);
+    $content_model = ContentModel::loadFromModel($this->contentModelPid, $this->contentModelDsid);
     if ($content_model === FALSE) {
       $this->formState['redirect'] = ($error) ? ' ' : $redirect_to;
       return;
     }
-    $pid = $collection_policy->getNextPid($content_model_dsid);
-    $form_values['user_id'] = $user->name;
-    $form_values['pid'] = $pid;
-    $form_values['content_model_pid'] = $content_model_pid;
-    $form_values['relationship'] = $relationship;
 
     // Custom stuff..
-    $transform = drupal_get_path('module', 'fedora_repository') . '/workflow_client/xsl/mods_to_dc.xsl';
     module_load_include('inc', 'islandora_form_builder', 'FoxmlForm');
-    module_load_include('inc', 'islandora_form_builder', 'ModsDocument');
-    $foxml = new FoxmlDocument($form_values);
-    $mods = new ModsDocument($form_values);
+    module_load_include('inc', 'islandora_form_builder', 'ModsDatastreamForm');
+    $label = "";
+    $pid = $collection_policy->getNextPid($this->contentModelDsid);
+    $ingest_file_location = isset($this->formState['values']['ingest-file-location']) ? $this->formState['values']['ingest-file-location'] : NULL;
+    $document = new ModsDocument($form, $this->formState);
+    $transform = drupal_get_path('module', 'fedora_repository') . '/workflow_client/xsl/mods_to_dc.xsl';
+    $foxml = new FoxmlDocument($label, $pid, $this->contentModelDsid, $this->contentModelPid, $this->collectionPid, $relationship, $ingest_file_location, $document, $transform);
+    echo $foxml->saveXML();
+    exit();
     $foxml->ingest();
-    
-    $error = (!$content_model->execFormHandler($form_values));
-
     // End custom stuff..
+    
     $_SESSION['fedora_ingest_files'] = ''; //empty this variable
     $attributes = $content_model->getIngestFormAttributes();
     $should_redirect = $attributes['redirect'];

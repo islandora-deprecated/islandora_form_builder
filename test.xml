@@ -32,6 +32,7 @@
                         <parent_path force_create_if_not_found="true">/mods:mods</parent_path>
                         <xml>&lt;mods:mods&gt;&lt;mods:titleInfo&gt;&lt;/mods:titleInfo&gt;&lt;/mods:mods&gt;</xml>
                     </xpath>
+                    <require_value>false</require_value>
                 </form_builder>
             </hidden>
             <tabpanel>
@@ -42,6 +43,7 @@
                         <parent_path force_create_if_not_found="false">/mods:mods</parent_path>
                         <element>mods:titleInfo</element>
                     </xpath>
+                    <require_value>false</require_value>
                 </form_builder>
                 <content>
                     <textfield>
@@ -52,6 +54,7 @@
                                 <parent_path force_create_if_not_found="false">/mods:mods/mods:titleInfo</parent_path>
                                 <xml>&lt;mods:title&gt;%value%&lt;/mods:title&gt;</xml>
                             </xpath>
+                            <require_value>false</require_value>
                         </form_builder>
                     </textfield>
                 </content>

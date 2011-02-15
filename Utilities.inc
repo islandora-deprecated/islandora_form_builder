@@ -9,7 +9,7 @@
  * really belong anywhere else.
  */
 define('STORAGE_KEY', 'islandora_form_builder');
-define('FORM_ROOT', 'root');
+define('FORM_ROOT', 'form_builder');
 
 /**
  * Sets up the bread crumbs for drupal.
