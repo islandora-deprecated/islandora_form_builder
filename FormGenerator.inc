@@ -123,7 +123,7 @@ class FormGenerator {
     $form_builder['path'] = array($path->textContent, $full);
     if ($full) {
       $parent_path = $this->xpath->query('descendant::cm:parent_path', $form_element)->item(0);
-      $form_builder['parent_path'] = array($parent_path->textContent, $parent_path->getAttribute('force_create_if_not_found') == 'true');
+      $form_builder['parent_path'] = $parent_path->textContent;
     }
     $xml = $this->xpath->query('descendant::cm:xml', $form_element);
     if ($xml->length == 1) {

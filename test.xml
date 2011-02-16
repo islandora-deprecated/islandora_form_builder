@@ -24,23 +24,12 @@
     </datastreams>
     <forms>
         <form name="full">
-            <hidden>
-                <value>foobar</value>
-                <form_builder>
-                    <xpath>
-                        <path full="true">/mods:mods</path>
-                        <parent_path force_create_if_not_found="true">/mods:mods</parent_path>
-                        <xml>&lt;mods:mods&gt;&lt;mods:titleInfo&gt;&lt;/mods:titleInfo&gt;&lt;/mods:mods&gt;</xml>
-                    </xpath>
-                    <require_value>false</require_value>
-                </form_builder>
-            </hidden>
             <tabpanel>
                 <title>Mods</title>
                 <form_builder>
                     <xpath>
                         <path full="true">/mods:mods/mods:titleInfo</path>
-                        <parent_path force_create_if_not_found="false">/mods:mods</parent_path>
+                        <parent_path>/mods:mods</parent_path>
                         <element>mods:titleInfo</element>
                     </xpath>
                     <require_value>false</require_value>
@@ -50,8 +39,7 @@
                         <title>Title</title>
                         <form_builder>
                             <xpath>
-                                <path full="false">/mods:mods/mods:titleInfo/mods:title[1]</path>
-                                <parent_path force_create_if_not_found="false">/mods:mods/mods:titleInfo</parent_path>
+                                <path full="false">mods:title[1]</path>
                                 <xml>&lt;mods:title&gt;%value%&lt;/mods:title&gt;</xml>
                             </xpath>
                             <require_value>false</require_value>

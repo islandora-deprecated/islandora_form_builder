@@ -28,14 +28,22 @@ class ModsDocument extends XmlDatastreamFormDocument {
           'xlink' => self::xlink,
           'xsi' => self::xsi,
         ));
-    $this->setRootAttributes();
+    $this->setCorrectVersion($this->documentElement);
+  }
+
+  /**
+   * Create the root element, called from parent.
+   */
+  protected function createRootElement() {
+    $root = $this->createElementNS(self::mods, 'mods:mods');
+    $this->setRootAttributes($root);
+    return $root;
   }
 
   /**
    * Correct/Add required root attributes.
    */
-  private function setRootAttributes() {
-    $root = $this->documentElement;
+  private function setRootAttributes($root) {
     $root->setAttribute('xmlns:xlink', self::xlink);
     $root->setAttribute('xmlns:mods', self::mods);
     $root->setAttribute('xmlns:xsi', self::xsi);

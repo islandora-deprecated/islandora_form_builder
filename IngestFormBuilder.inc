@@ -280,7 +280,7 @@ class IngestFormBuilder implements FormBuilderInterface {
     module_load_include('inc', 'fedora_repository', 'ContentModel');
     module_load_include('inc', 'fedora_repository', 'MimeClass');
     $file = $form_values['ingest-file-location'];
-    
+
     $content_model = ContentModel::loadFromModel($this->contentModelPid, $this->contentModelDsid);
     if ($content_model === FALSE) {
       $this->formState['rebuild'] = FALSE;
@@ -314,47 +314,37 @@ class IngestFormBuilder implements FormBuilderInterface {
    *  $form
    */
   public function submitForm(&$form) {
-    global $base_url;
-    module_load_include('inc', 'fedora_repository', 'CollectionClass');
     module_load_include('inc', 'fedora_repository', 'CollectionPolicy');
-    module_load_include('inc', 'fedora_repository', 'ContentModel');
-    
     $error = TRUE;
     $should_redirect = TRUE;
-    $redirect_to = $base_url . "/fedora/repository/{$this->collectionPid}";
     $collection_policy = CollectionPolicy::loadFromCollection($this->collectionPid);
-    if ($collection_policy === FALSE) {
-      $this->formState['redirect'] = ($error) ? ' ' : $redirect_to;
-      return;
-    }
-    $relationship = $collection_policy->getRelationship();
-    $content_model = ContentModel::loadFromModel($this->contentModelPid, $this->contentModelDsid);
-    if ($content_model === FALSE) {
-      $this->formState['redirect'] = ($error) ? ' ' : $redirect_to;
-      return;
-    }
+    if ($collection_policy !== FALSE) {
+      module_load_include('inc', 'fedora_repository', 'ContentModel');
+      $relationship = $collection_policy->getRelationship();
+      $content_model = ContentModel::loadFromModel($this->contentModelPid, $this->contentModelDsid);
+      if ($content_model !== FALSE) {
+        module_load_include('inc', 'islandora_form_builder', 'FoxmlForm');
+        module_load_include('inc', 'islandora_form_builder', 'ModsDatastreamForm');
+        $label = "";
+        $pid = $collection_policy->getNextPid($this->contentModelDsid);
+        $ingest_file_location = isset($this->formState['values']['ingest-file-location']) ? $this->formState['values']['ingest-file-location'] : NULL;
 
-    // Custom stuff..
-    module_load_include('inc', 'islandora_form_builder', 'FoxmlForm');
-    module_load_include('inc', 'islandora_form_builder', 'ModsDatastreamForm');
-    $label = "";
-    $pid = $collection_policy->getNextPid($this->contentModelDsid);
-    $ingest_file_location = isset($this->formState['values']['ingest-file-location']) ? $this->formState['values']['ingest-file-location'] : NULL;
-    $document = new ModsDocument($form, $this->formState);
-    $transform = drupal_get_path('module', 'fedora_repository') . '/workflow_client/xsl/mods_to_dc.xsl';
-    $foxml = new FoxmlDocument($label, $pid, $this->contentModelDsid, $this->contentModelPid, $this->collectionPid, $relationship, $ingest_file_location, $document, $transform);
-    echo $foxml->saveXML();
-    exit();
-    $foxml->ingest();
-    // End custom stuff..
-    
-    $_SESSION['fedora_ingest_files'] = ''; //empty this variable
-    $attributes = $content_model->getIngestFormAttributes();
-    $should_redirect = $attributes['redirect'];
+        $document = new ModsDocument($form, $this->formState);
+        $transform = drupal_get_path('module', 'islandora_form_builder') . '/transforms/mods_to_dc.xsl';
+        $foxml = new FoxmlDocument($label, $pid, $this->contentModelDsid, $this->contentModelPid, $this->collectionPid, $relationship, $ingest_file_location, $document, $transform);
+        $error = $foxml->ingest();
 
+        $_SESSION['fedora_ingest_files'] = ''; //empty this variable
+//        $attributes = $content_model->getIngestFormAttributes();
+//        $should_redirect = $attributes['redirect'];
+//        if ($should_redirect) {
+//          $this->formState['storage'] = NULL;
+//        }
+      }
+    }
     if ($should_redirect) {
-      $this->formState['storage'] = NULL;
-      $this->formState['redirect'] = ($error) ? ' ' : $redirect_to;
+      global $base_url;
+      $this->formState['redirect'] = ($error) ? ' ' : $base_url . "/fedora/repository/{$this->collectionPid}";
     }
   }
 

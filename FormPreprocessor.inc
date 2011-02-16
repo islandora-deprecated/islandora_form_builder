@@ -15,31 +15,29 @@ module_load_include('inc', 'islandora_form_builder_elements', 'Utilities');
 class FormPreprocessor {
 
   /**
+   * The form to process. This is rooted at FORM_ROOT.
    *
    * @var array
    */
   protected $form;
-  /**
-   *
-   * @var array
-   */
-  protected $formValues;
 
   /**
+   * Create a FormPreprocessor.
    *
    * @param array $form
    * @param array $form_state
    */
   public function __construct(&$form) {
     $this->form = &$form;
-    $this->formValues = &$form_values;
     $this->allowedFormElements = islandora_form_builder_elements_get_allowed_form_elements();
   }
 
   /**
+   * Process all child elements.
    *
    * @param array $form
    * @param array $form_values
+   * 
    * @return array
    */
   private function processChildren(&$form, &$parent) {
@@ -50,6 +48,13 @@ class FormPreprocessor {
     }
   }
 
+  /**
+   * Process a child form element.
+   *
+   * @param array $form
+   *
+   * @param array $parent
+   */
   private function processChildFormElement(&$form, &$parent) {
     if (isset($form['content'])) {
       $this->processChildContent($form['content'], $parent);
@@ -62,6 +67,13 @@ class FormPreprocessor {
     }
   }
 
+  /**
+   * Process a form element that has no parents.
+   *
+   * @param array $form
+   *
+   * @return array
+   */
   private function processFormElement(&$form) {
     if (isset($form['content'])) {
       return $this->processContent($form['content']);
@@ -75,6 +87,13 @@ class FormPreprocessor {
     }
   }
 
+  /**
+   * Process a the content of a form element.
+   *
+   * @param array $content
+   *
+   * @param array $parent
+   */
   private function processChildContent(&$content, &$parent) {
     $i = 0;
     while (isset($content[$i])) {
@@ -85,6 +104,13 @@ class FormPreprocessor {
     }
   }
 
+  /**
+   * Process a the content of a parentless form element.
+   * 
+   * @param array $content
+   *
+   * @return array
+   */
   private function processContent(&$content) {
     $processed_content;
     $i = 0;
@@ -139,14 +165,26 @@ class FormPreprocessor {
     return $processed_form;
   }
 
+  /**
+   * Process the form.
+   *
+   * @return array
+   *
+   */
   public function process() {
     $processed_form = $this->processForm();
     return $this->prune($processed_form);
   }
 
   /**
+   * Remove branches of the processed form, if they are not required,
+   * and if they don't have valid values.
    *
    * @param array $processed_form
+   *   The already procesed form.
+   * 
+   * @return array
+   *   The pruned processed form.
    */
   private function prune(&$processed_form) {
     foreach ($processed_form as $i => $element) {
@@ -158,18 +196,25 @@ class FormPreprocessor {
   }
 
   /**
+   * Determine if a branch should be pruned.
+   *
+   * Form elements that have no children are pruned if they have no value and they require a value.
+   * Form elements with children are pruned if the element is not required and if all of its child
+   * elements have been pruned.
    *
    * @param array $branch
+   *   Branch to check.
    * @return boolean
+   *   TRUE if this branch should be pruned FALSE otherwise.
    */
   private function shouldBePruned($branch) {
-    $has_children = is_array($branch['#children']);
+    $has_children = isset($branch['#children']);
     if (!$has_children) {
       $properties = $this->getFormBuilderProperties($branch);
       $value = $branch['#value'];
       $require_value = $properties['require_value'];
       $valid_value = is_string($value) && (!$require_value) ? TRUE : trim($value) !== '';
-      return !$valid_value;
+      return!$valid_value;
     }
     else {
       $this->prune($branch['#children']);
