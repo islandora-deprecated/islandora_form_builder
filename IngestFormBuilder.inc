@@ -50,6 +50,12 @@ class IngestFormBuilder implements FormBuilderInterface {
    */
   protected $collectionLabel;
   /**
+   * The name of the ingest form to be build. This gets set on the first page of the form.
+   *
+   * @var string
+   */
+  protected $formName;
+  /**
    * The current page of this multi-page form.
    *
    * @var integer
@@ -77,6 +83,7 @@ class IngestFormBuilder implements FormBuilderInterface {
     $this->collectionLabel = $this->storage['collection_label'];
     $this->contentModelPid = isset($this->storage['content_model_pid']) ? $this->storage['content_model_pid'] : NULL;
     $this->contentModelDsid = isset($this->storage['content_model_dsid']) ? $this->storage['content_model_dsid'] : NULL;
+    $this->formName = isset($this->storage['form_name']) ? $this->storage['form_name'] : NULL;
     $this->page = &$this->storage['ingest_form_page'];
   }
 
@@ -187,10 +194,12 @@ class IngestFormBuilder implements FormBuilderInterface {
       return FALSE;
     }
     $models_for_form = array();
+    $forms_avaliable = array();
     foreach ($content_models as $content_model) {
       $identifier = $content_model->getIdentifier();
       $name = $content_model->name;
-      $models_for_form["$identifier"] = "$name";
+      $models_for_form[$identifier] = $name;
+      $forms_avaliable[$identifier] = $content_model->getFormNames();
     }
     $form['indicator'] = array(
       '#type' => 'fieldset',
@@ -206,6 +215,12 @@ class IngestFormBuilder implements FormBuilderInterface {
           'information may be found ' .
           '<a href="https://wiki.duraspace.org/display/FEDORACREATE/Content+Models+Overview">here.</a> ')
     );
+    $form['indicator']['forms'] = array(// Forms available
+      '#type' => 'select',
+      '#title' => t('Forms available'),
+      '#options' => $forms_avaliable,
+      '#description' => t('The form to use for ingesting the digital object.')
+    );
     $form['submit'] = array(
       '#type' => 'submit',
       '#value' => t('Next')
@@ -219,11 +234,15 @@ class IngestFormBuilder implements FormBuilderInterface {
   private function getFormPageTwo() {
     module_load_include('inc', 'fedora_repository', 'ContentModel');
     module_load_include('inc', 'islandora_form_builder', 'FormGenerator');
-    $form_values = $this->formState['values'];
-    $content_model_pid = ContentModel::getPidFromIdentifier($form_values['models']);
-    $content_model_dsid = ContentModel::getDSIDFromIdentifier($form_values['models']);
-    $form_generator = new FormGenerator($content_model_pid, $content_model_dsid);
-    $form = $form_generator->generateForm('full'); // TODO get from user .
+    $form['#attributes']['enctype'] = 'multipart/form-data';
+    $form['indicator']['ingest-file-location'] = array(
+      '#type' => 'file',
+      '#title' => t('Upload Document'),
+      '#size' => 48,
+      '#description' => t('Full text'),
+    );
+    $form_generator = new FormGenerator($this->contentModelPid, $this->contentModelDsid);
+    $form[FORM_ROOT] = $form_generator->generateForm($this->formName); // TODO get from user .
     $form['submit'] = array(
       '#type' => 'submit',
       '#value' => t('Ingest'),
@@ -252,6 +271,7 @@ class IngestFormBuilder implements FormBuilderInterface {
     $form_values = &$this->formState['values'];
     $this->storage['content_model_pid'] = ContentModel::getPidFromIdentifier($form_values['models']);
     $this->storage['content_model_dsid'] = ContentModel::getDSIDFromIdentifier($form_values['models']);
+    $this->storage['form_name'] = $form_values['forms'];
     $this->page++;
     $this->formState['rebuild'] = TRUE;
   }
@@ -337,9 +357,9 @@ class IngestFormBuilder implements FormBuilderInterface {
         $_SESSION['fedora_ingest_files'] = ''; //empty this variable
 //        $attributes = $content_model->getIngestFormAttributes();
 //        $should_redirect = $attributes['redirect'];
-//        if ($should_redirect) {
-//          $this->formState['storage'] = NULL;
-//        }
+        if ($should_redirect) {
+          $this->formState['storage'] = NULL;
+        }
       }
     }
     if ($should_redirect) {

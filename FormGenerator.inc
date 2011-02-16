@@ -37,10 +37,10 @@ class FormGenerator {
     if ($form_element) {
       $form = array();
       $result = $this->xpath->query('child::*', $form_element);
-      $form[FORM_ROOT]['#tree'] = TRUE;
+      $form['#tree'] = TRUE;
       for ($i = 0; $i < $result->length; $i++) { // Top level form elements.
         $child = $result->item($i);
-        $form[FORM_ROOT][] = $this->createDrupalFormElement($child);
+        $form[] = $this->createDrupalFormElement($child);
       }
       return $form;
     }
@@ -147,4 +147,5 @@ class FormGenerator {
     $form['content'][0]['#form_builder'] = $form['#form_builder'];
     $form['content'][0]['#form_builder']['path'][0] .= '[1]';
   }
+
 }
