@@ -110,10 +110,10 @@ function islandora_form_builder_ingest_form_submit(&$form, &$form_state) {
  * @return array
  *   A drupal form, used to edit the object $pid and the datastream $dsid.
  */
-function islandora_form_builder_edit($pid = NULL, $dsid = NULL) {
-  if (islandora_form_builder_check_edit_form_arguments_and_permissions($pid, $dsid)) {
+function islandora_form_builder_edit($pid = NULL, $dsid = NULL, $form_name = NULL) {
+  if (islandora_form_builder_check_edit_form_arguments_and_permissions($pid, $dsid, $form_name)) {
     islandora_form_builder_set_bread_crumbs($pid);
-    return drupal_get_form('islandora_form_builder_edit_form', $pid, $dsid);
+    return drupal_get_form('islandora_form_builder_edit_form', $pid, $dsid, $form_name);
   }
 }
 
@@ -124,9 +124,9 @@ function islandora_form_builder_edit($pid = NULL, $dsid = NULL) {
  * @param <type> $dsid
  * @return <type> 
  */
-function islandora_form_builder_edit_form(&$form_state, $pid, $dsid) {
+function islandora_form_builder_edit_form(&$form_state, $pid, $dsid, $form_name) {
   module_load_include('inc', 'islandora_form_builder', 'EditFormBuilder');
-  $edit_form_builder = new EditFormBuilder($form_state, $collection_pid, $collection_label);
+  $edit_form_builder = new EditFormBuilder($form_state, $pid, $dsid, $form_name);
   $form = $edit_form_builder->createForm();
   $form['submit']['#validate'] = array('islandora_form_builder_ingest_form_validate');
   $form['submit']['#submit'] = array('islandora_form_builder_ingest_form_submit');

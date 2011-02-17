@@ -232,8 +232,9 @@ class IngestFormBuilder implements FormBuilderInterface {
    *
    */
   private function getFormPageTwo() {
-    module_load_include('inc', 'fedora_repository', 'ContentModel');
     module_load_include('inc', 'islandora_form_builder', 'FormGenerator');
+    $form_values = &$this->formState['values'];
+    $file = isset($form_values['ingest-file-location']) ? $form_values['ingest-file-location'] : '';
     $form['#attributes']['enctype'] = 'multipart/form-data';
     $form['indicator']['ingest-file-location'] = array(
       '#type' => 'file',
@@ -241,8 +242,8 @@ class IngestFormBuilder implements FormBuilderInterface {
       '#size' => 48,
       '#description' => t('Full text'),
     );
-    $form_generator = new FormGenerator($this->contentModelPid, $this->contentModelDsid);
-    $form[FORM_ROOT] = $form_generator->generateForm($this->formName); // TODO get from user .
+    $form_generator = FormGenerator::CreateFromModel($this->contentModelPid, $this->contentModelDsid);
+    $form[FORM_ROOT] = $form_generator->generate($this->formName); // TODO get from user .
     $form['submit'] = array(
       '#type' => 'submit',
       '#value' => t('Ingest'),
@@ -286,46 +287,39 @@ class IngestFormBuilder implements FormBuilderInterface {
   private function validateFormTwo(&$form) {
     $validators = array();
     $form_values = &$this->formState['values'];
-
     if (!empty($_FILES['files']['name']['ingest-file-location'])) {
       $file_object = file_save_upload('ingest-file-location', $validators);
       file_move($file_object->filepath, 0, 'FILE_EXISTS_RENAME');
       $form_values['ingest-file-location'] = $file_object->filepath;
     }
-
-    if (empty($form_values['ingest-file-location']) || !file_exists($form_values['ingest-file-location'])) {
-      $this->formState['rebuild'] = FALSE;
-      return;
-    }
-    module_load_include('inc', 'fedora_repository', 'ContentModel');
-    module_load_include('inc', 'fedora_repository', 'MimeClass');
-    $file = $form_values['ingest-file-location'];
-
-    $content_model = ContentModel::loadFromModel($this->contentModelPid, $this->contentModelDsid);
-    if ($content_model === FALSE) {
-      $this->formState['rebuild'] = FALSE;
-      return;
-    }
-
-    $allowed_mime_types = $content_model->getMimetypes();
-    $mime = new MimeClass();
-    $mime_type = $mime->getType($file);
-
-    if (!empty($file)) {
-      if (!in_array($mime_type, $allowed_mime_types)) {
-        $error = t("The uploaded file\'s mimetype ($mime_type) is not associated with this Content Model. The allowed types are " .
-                implode(' ', $allowed_mime_types));
-        form_set_error('ingest-file-location', $error);
-        file_delete($file);
-        return;
-      }
-      else if (!$content_model->execIngestRules($file, $mime_type)) {
-        drupal_set_message(t('Error following Content Model Rules'), 'error');
-        foreach (ContentModel::$errors as $error) {
-          drupal_set_message($error, 'error');
+    if (file_exists($form_values['ingest-file-location'])) {
+      module_load_include('inc', 'fedora_repository', 'ContentModel');
+      module_load_include('inc', 'fedora_repository', 'MimeClass');
+      $file = $form_values['ingest-file-location'];
+      $content_model = ContentModel::loadFromModel($this->contentModelPid, $this->contentModelDsid);
+      if ($content_model !== FALSE) {
+        $allowed_mime_types = $content_model->getMimetypes();
+        $mime = new MimeClass();
+        $mime_type = $mime->getType($file);
+        if (!empty($file)) {
+          if (!in_array($mime_type, $allowed_mime_types)) {
+            $error = t("The uploaded file\'s mimetype ($mime_type) is not associated with this Content Model. The allowed types are " .
+                    implode(' ', $allowed_mime_types));
+            form_set_error('ingest-file-location', $error);
+            file_delete($file);
+            return;
+          }
+          else if (!$content_model->execIngestRules($file, $mime_type)) {
+            drupal_set_message(t('Error following Content Model Rules'), 'error');
+            foreach (ContentModel::$errors as $error) {
+              drupal_set_message($error, 'error');
+            }
+          }
         }
       }
     }
+    $this->formState['rebuild'] = FALSE;
+    return;
   }
 
   /**

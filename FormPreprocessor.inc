@@ -208,9 +208,9 @@ class FormPreprocessor {
    *   TRUE if this branch should be pruned FALSE otherwise.
    */
   private function shouldBePruned($branch) {
+    $properties = $this->getFormBuilderProperties($branch);
     $has_children = isset($branch['#children']);
     if (!$has_children) {
-      $properties = $this->getFormBuilderProperties($branch);
       $value = $branch['#value'];
       $require_value = $properties['require_value'];
       $valid_value = is_string($value) && (!$require_value) ? TRUE : trim($value) !== '';
@@ -218,7 +218,7 @@ class FormPreprocessor {
     }
     else {
       $this->prune($branch['#children']);
-      return count($branch['#children']) == 0 && !$properties['#form_builder']['require_value'];
+      return count($branch['#children']) == 0 && !$properties['require_value'];
     }
   }
 

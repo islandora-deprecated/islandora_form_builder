@@ -108,7 +108,7 @@ abstract class XmlDatastreamFormDocument extends DOMDocument {
   private function createDocument() {
     if ($this->shouldModifyExistingDocument()) { // Edit forms.
       $document = $this->getExistingDocument();
-      $this->modifyExistingDocument($document);
+      $this->modifyExistingDocument($document, $this->preprocessedForm);
       $this->loadXML($document->saveXML()); // Is importing quicker?
     }
     else {
@@ -154,8 +154,11 @@ abstract class XmlDatastreamFormDocument extends DOMDocument {
    *
    * @param DOMDocument $document
    *   Document to modify.
+   * @param array $form
+   *   Submitted form.
    */
-  private function modifyExistingDocument($document) {
+  private function modifyExistingDocument(&$document, &$form) {
+    // Remove element by unused hashes.
     
   }
 

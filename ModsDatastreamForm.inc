@@ -23,12 +23,20 @@ class ModsDocument extends XmlDatastreamFormDocument {
    * @param array $form_state
    */
   public function __construct(&$form, &$form_state) {
-    parent::__construct($form, $form_state, array(
-          'mods' => self::mods,
-          'xlink' => self::xlink,
-          'xsi' => self::xsi,
-        ));
+    parent::__construct($form, $form_state, self::getRequiredNamespaces());
     $this->setCorrectVersion($this->documentElement);
+  }
+
+  /**
+   * @return array
+   *   A map of required namepaces where the key's are the prefixs and the values are URI's
+   */
+  public static function getRequiredNamespaces() {
+    return array(
+      'mods' => self::mods,
+      'xlink' => self::xlink,
+      'xsi' => self::xsi,
+    );
   }
 
   /**

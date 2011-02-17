@@ -19,8 +19,37 @@ class FormGenerator {
   protected $xpath;
   protected $formElementTypes;
 
-  function __construct($content_model_pid, $content_model_dsid) {
-    $this->contentModel = ContentModel::loadFromModel($content_model_pid, $content_model_dsid);
+  /**
+   * Creates a FormGenerator from an object.
+   * 
+   * @param string $pid
+   * 
+   * @return FormGenerator 
+   */
+  public static function CreateFromObject($pid) {
+    $content_model = ContentModel::loadFromObject($pid);
+    return new FormGenerator($content_model);
+  }
+
+  /**
+   * Creates a FormGenerator from a model.
+   *
+   * @param string $content_model_pid
+   * @param string $content_model_dsid
+   *
+   * @return FormGenerator 
+   */
+  public static function CreateFromModel($content_model_pid, $content_model_dsid) {
+    $content_model = ContentModel::loadFromModel($content_model_pid, $content_model_dsid);
+    return new FormGenerator($content_model);
+  }
+
+  /**
+   *
+   * @param ContentModel $content_model
+   */
+  private function __construct($content_model) {
+    $this->contentModel = $content_model;
     $xml = $this->contentModel->dumpXml();
     $this->formDefinition = new DOMDocument();
     //$this->formDefinition->loadXML($xml);
@@ -32,7 +61,15 @@ class FormGenerator {
     $this->formElementTypes = islandora_form_builder_elements_get_allowed_form_elements();
   }
 
-  public function generateForm($form_name) {
+  /**
+   * Generates a drupal form based on a XML definition in the content model.
+   *
+   * @param string $form_name
+   *
+   * @return array
+   *   Drupal Form.
+   */
+  public function generate($form_name) {
     $form_element = $this->findFormElement($form_name);
     if ($form_element) {
       $form = array();

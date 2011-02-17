@@ -7,6 +7,17 @@
  *
  */
 
+class TextField {
+  public static function populate(&$form, &$node_list) {
+    module_load_include('inc', 'islandora_form_builder', 'FormPopulator');
+    if($node_list->length == 1) {
+      $node = $node_list->item(0);
+      $form['#default_value'] = $node->textContent;
+      $form['#form_builder']['hash'] = FormPopulator::generateHash($node);
+    }
+  }
+}
+
 /**
  *
  * @param <type> $element
