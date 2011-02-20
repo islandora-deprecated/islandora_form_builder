@@ -158,8 +158,8 @@ abstract class XmlDatastreamFormDocument extends DOMDocument {
    *   Submitted form.
    */
   private function modifyExistingDocument(&$document, &$form) {
-    // Remove element by unused hashes.
-    
+    // Build a list of the remaining 
+// Remove element by unused hashes.
   }
 
   /**
@@ -207,7 +207,7 @@ abstract class XmlDatastreamFormDocument extends DOMDocument {
    */
   private function findNode($properties, $parent_node) {
     list($path, $full) = $properties['path'];
-    if($full) {
+    if ($full) {
       $result = $this->xpath->query($path);
       return $result->length == 1 ? $result->item(0) : FALSE;
     }

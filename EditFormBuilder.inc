@@ -51,7 +51,7 @@ class EditFormBuilder implements FormBuilderInterface {
   public function __construct(&$form_state, $pid = NULL, $dsid = NULL, $form_name = NULL) {
     $this->initializeStorage($form_state, $pid, $dsid, $form_name);
     $this->formState = &$form_state;
-    $this->storage = $this->formState['storage'][STORAGE_KEY];
+    $this->storage = &$this->formState['storage'][STORAGE_KEY];
     $this->pid = $this->storage['pid'];
     $this->dsid = $this->storage['dsid'];
     $this->formName = $this->storage['form_name'];
@@ -66,7 +66,7 @@ class EditFormBuilder implements FormBuilderInterface {
    * @param string $dsid
    */
   private function initializeStorage(&$form_state, $pid = NULL, $dsid = NULL, $form_name = NULL) {
-    if (is_array($form_state['storage'][STORAGE_KEY])) {
+    if (!is_array($form_state['storage'][STORAGE_KEY])) {
       $form_state['storage'][STORAGE_KEY] = array();
     }
     $storage = &$form_state['storage'][STORAGE_KEY];
@@ -103,7 +103,7 @@ class EditFormBuilder implements FormBuilderInterface {
    *   Drupal form to be validated.
    */
   public function validateForm(&$form) {
-
+    
   }
 
   /**
@@ -115,17 +115,20 @@ class EditFormBuilder implements FormBuilderInterface {
   public function submitForm(&$form) {
     global $base_url;
 
-    
-    $mods = new ModsDocument($form, $this->formState);
-    $this->modifyDatastream($mods, "{$this->dsid}", "{$this->dsid} Record", 'text/xml');
-    $transform = drupal_get_path('module', 'islandora_form_builder') . '/transforms/mods_to_dc.xsl';
-    $dublin_core = $this->transformDocumentIntoDublinCore($mods, $transform);
-    $dublin_core->version = "1.0";
-    $dublin_core->encoding = "UTF-8";
-    $dublin_core->formatOutput = TRUE;
-    $this->modifyDatastream($dublin_core, 'DC', "Dublin Core Record", 'text/xml');
-    $this->formState['storage'] = NULL;
-    $form_state['redirect'] = $base_url . '/fedora/repository/' . $form_state['values']['pid'];
+    module_load_include('inc', 'islandora_form_builder', 'ModsDatastreamForm');
+    //$mods = new ModsDocument($form, $this->formState);
+    echo $this->storage['xml'];
+    exit();
+//    $mods = new ModsDocument($form, $this->formState);
+//    $this->modifyDatastream($mods, "{$this->dsid}", "{$this->dsid} Record", 'text/xml');
+//    $transform = drupal_get_path('module', 'islandora_form_builder') . '/transforms/mods_to_dc.xsl';
+//    $dublin_core = $this->transformDocumentIntoDublinCore($mods, $transform);
+//    $dublin_core->version = "1.0";
+//    $dublin_core->encoding = "UTF-8";
+//    $dublin_core->formatOutput = TRUE;
+//    $this->modifyDatastream($dublin_core, 'DC', "Dublin Core Record", 'text/xml');
+//    $this->formState['storage'] = NULL;
+//    $form_state['redirect'] = $base_url . '/fedora/repository/' . $form_state['values']['pid'];
   }
 
   /**
@@ -227,4 +230,5 @@ class EditFormBuilder implements FormBuilderInterface {
       $this->modifyInlineDatastream($dom, $dsid, $label, $mime_type);
     }
   }
+
 }

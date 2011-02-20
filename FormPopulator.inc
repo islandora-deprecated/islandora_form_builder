@@ -22,14 +22,52 @@ class FormPopulator {
   protected $allowedFormElements;
 
   /**
+   * Generates a hash
+   * @param DOMNode $node
+   * @return string
+   */
+  public static function generateHash(&$node) {
+    list($hash, $path) = self::generateHashPath($node);
+    return $hash;
+  }
+
+  /**
    * Generates a hash that can be used to identify this node.
    * 
    * @param DOMNode $node
    * 
    * @return hash
    */
-  public static function generateHash(&$node) {
-    return 0;
+  public static function generateHashPath(&$node) {
+    $path = $node->nodeName;
+    $index = self::findXPathIndexInParentElement($node);
+    $path = get_class($node) == 'DOMAttr' ? "@$path" : $path . "[$index]";
+    $parent = $node;
+    while (($parent = $parent->parentNode) && (get_class($parent) == 'DOMElement')) {
+      $index = self::findXPathIndexInParentElement($parent);
+      $path = "{$parent->nodeName}[$index]/$path";
+    }
+    $path = "/$path";
+    return array(md5($path), $path);
+  }
+
+  /**
+   * Find's the index of the child within it's parent element.
+   * Base 1 index, since it will be used by xpath.
+   *
+   * @param DOMNode $node
+   * @return int
+   */
+  private static function findXPathIndexInParentElement(&$node) {
+    $count = 1;
+    $name = $node->nodeName;
+    $next = $node;
+    while ($next = $next->previousSibling) {
+      if (get_class($next) == 'DOMElement' && $next->nodeName == $name) {
+        $count++;
+      }
+    }
+    return $count;
   }
 
   /**
@@ -40,13 +78,16 @@ class FormPopulator {
    */
   function __construct(&$form_state, $pid, $dsid) {
     $this->initializeStorage($form_state, $pid, $dsid);
-    $this->xml = $this->storage['xml'];
+    $this->xml = new DOMDocument();
+    $this->xml->loadXML($this->storage['xml']);
     $this->xpath = new DOMXPath($this->xml);
+    // HACK
     module_load_include('inc', 'islandora_form_builder', 'ModsDatastreamForm');
     $namespaces = ModsDocument::getRequiredNamespaces();
     foreach ($namespaces as $prefix => $uri) {
       $this->xpath->registerNamespace($prefix, $uri);
     }
+    // HACK
     $this->allowedFormElements = islandora_form_builder_elements_get_allowed_form_elements();
   }
 
@@ -57,13 +98,11 @@ class FormPopulator {
    * @param string $dsid
    */
   private function initializeStorage(&$form_state, $pid, $dsid) {
-    $this->formState = $form_state;
-    $this->storage = $this->formState['storage'][STORAGE_KEY];
+    $this->formState = &$form_state;
+    $this->storage = &$this->formState['storage'][STORAGE_KEY];
     if (!isset($this->storage['xml'])) {
       $this->item = new fedora_item($pid);
-      $xml_string = $this->item->get_datastream_dissemination($dsid);
-      $this->storage['xml'] = new DOMDocument();
-      $this->storage['xml']->loadXML($xml_string);
+      $this->storage['xml'] = $this->item->get_datastream_dissemination($dsid);
     }
   }
 
@@ -173,8 +212,8 @@ class FormPopulator {
   private function registerNodes(&$node_list) {
     for ($i = 0; $i < $node_list->length; $i++) {
       $node = $node_list->item($i);
-      $hash = self::generateHash($node);
-      $this->registerNodeWithHash($node, $hash);
+      list($hash, $path) = self::generateHashPath($node);
+      $this->registerHashPath($hash, $path);
     }
   }
 
@@ -183,8 +222,8 @@ class FormPopulator {
    * @param DOMNode $node
    * @param hash $hash
    */
-  private function registerNodeWithHash(&$node, $hash) {
-    $this->storage['hashes'][$hash] = $node;
+  private function registerHashPath($hash, $path) {
+    $this->storage['hashes'][$hash] = $path;
   }
 
   /**

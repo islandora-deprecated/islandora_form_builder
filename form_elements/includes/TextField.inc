@@ -6,39 +6,44 @@
  * @file
  *
  */
-
 class TextField {
+
   public static function populate(&$form, &$node_list) {
     module_load_include('inc', 'islandora_form_builder', 'FormPopulator');
-    if($node_list->length == 1) {
+    if ($node_list->length == 1) {
       $node = $node_list->item(0);
       $form['#default_value'] = $node->textContent;
       $form['#form_builder']['hash'] = FormPopulator::generateHash($node);
     }
   }
+
+  public static function process(&$element, &$form_state) {
+    if (isset($element['#sticky']) && $element['#sticky'] == TRUE) {
+      $element['#type'] = 'sticky_textfield';
+      $stickyName = preg_replace('/\]/', '', array_pop(preg_split('/\[/', $element['#name']))) . '-sticky';
+      if (isset($element['#post'][$stickyName]) && strtolower($element['#post'][$stickyName]) == 'on') {
+        $form_state['storage'][$element['#name']] = $element['#value'];
+      }
+      elseif (isset($form_state['storage'][$element['#name']])) {
+        $element['#value'] = $form_state['storage'][$element['#name']];
+        $element['#sticky_on'] = TRUE;
+      }
+    }
+    return $element;
+  }
+
 }
 
 /**
  *
- * @param <type> $element
- * @param <type> $edit
- * @param string $form_state
- * @param <type> $complete_form
- * @return boolean 
+ * @param array $element
+ * @param string $edit
+ * @param array $form_state
+ * @param array $complete_form
+ * @return array
  */
 function ife_sticky_textfield_process(&$element, $edit, &$form_state, $complete_form) {
-  if (isset($element['#sticky']) && $element['#sticky'] == TRUE) {
-    $element['#type'] = 'sticky_textfield';
-    $stickyName = preg_replace('/\]/', '', array_pop(preg_split('/\[/', $element['#name']))) . '-sticky';
-    if (isset($element['#post'][$stickyName]) && strtolower($element['#post'][$stickyName]) == 'on') {
-      $form_state['storage'][$element['#name']] = $element['#value'];
-    }
-    elseif (isset($form_state['storage'][$element['#name']])) {
-      $element['#value'] = $form_state['storage'][$element['#name']];
-      $element['#sticky_on'] = TRUE;
-    }
-  }
-  return $element;
+  return TextField::process($element, $form_state);
 }
 
 /**
