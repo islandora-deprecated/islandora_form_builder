@@ -40,6 +40,12 @@ class EditFormBuilder implements FormBuilderInterface {
    * @var string 
    */
   protected $formName;
+  /**
+   * The fedora object to edit.
+   *
+   * @var Fedora_Item
+   */
+  protected $fedoraItem;
 
   /**
    * Create the Edit Form Builder.
@@ -118,9 +124,12 @@ class EditFormBuilder implements FormBuilderInterface {
 
     module_load_include('inc', 'islandora_form_builder', 'ModsDatastreamForm');
     //$mods = new ModsDocument($form, $this->formState);
-    echo $this->storage['xml'];
+    module_load_include('inc', 'fedora_repository', 'ContentModel');
+    $content_model = ContentModel::loadFromObject($this->pid);
+    list($class) = $this->loadDocumentClass($content_model);
+    $document = new $class($form, $this->formState);
+    echo $document->saveXML();
     exit();
-//    $mods = new ModsDocument($form, $this->formState);
 //    $this->modifyDatastream($mods, "{$this->dsid}", "{$this->dsid} Record", 'text/xml');
 //    $transform = drupal_get_path('module', 'islandora_form_builder') . '/transforms/mods_to_dc.xsl';
 //    $dublin_core = $this->transformDocumentIntoDublinCore($mods, $transform);
@@ -230,6 +239,23 @@ class EditFormBuilder implements FormBuilderInterface {
     else {
       $this->modifyInlineDatastream($dom, $dsid, $label, $mime_type);
     }
+  }
+
+  /**
+   * Loads the appropriate class file, and returns the class name.
+   *
+   * @param ContentModel $content_model
+   * @return string
+   */
+  private function loadDocumentClass($content_model) {
+    $form = $content_model->getForm($this->formName);
+    $module = $form->getAttribute('module');
+    $file = $form->getAttribute('file');
+    $class = $form->getAttribute('class');
+    $dsid = $form->getAttribute('dsid');
+    $path = drupal_get_path('module', $module);
+    require_once "$path/$file";
+    return array($class, $dsid);
   }
 
 }

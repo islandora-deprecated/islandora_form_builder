@@ -210,6 +210,9 @@ abstract class XmlDatastreamFormDocument extends DOMDocument {
     list($path, $full) = $properties['path'];
     if ($full) {
       $result = $this->xpath->query($path);
+      if($result == FALSE) {
+        $break_here;
+      }
       return $result->length == 1 ? $result->item(0) : FALSE;
     }
     $result = $this->xpath->query($path, $parent_node);

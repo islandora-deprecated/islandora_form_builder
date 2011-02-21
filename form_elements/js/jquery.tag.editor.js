@@ -39,7 +39,7 @@ Joost Elfering
 1.1
 -Initial public release
 -Added the completeOnSeparator and completeOnBlur options
-*/
+ */
 (function(jQuery) {
     jQuery.fn.tagEditor = function(options) {
         var defaults = {
@@ -54,7 +54,7 @@ Joost Elfering
             initialParse: true,
             imageTag: false,
             imageTagUrl: '',
-            continuousOutputBuild: false
+            continuousOutputBuild: true
         };
 
         options = jQuery.extend(defaults, options);
@@ -63,7 +63,10 @@ Joost Elfering
         var itemBase = [];
 
         return this.each(function() {
-            function addTag(tag) {
+            function addTag(tag, hash) {
+                $('#edit-form-class-select, #edit-form-method-select, #edit-form-handler-select').html('');
+
+
                 tag = jQuery.trim(tag);
                 for (var i = 0; i < itemBase.length; i++) {
                     if (itemBase[i].toLowerCase() == tag.toLowerCase()) {
@@ -84,7 +87,15 @@ Joost Elfering
                             return;
                         }
                     }
-
+                    if(hash && hash != '') {
+                        var form_build_id = $("form input[name='form_build_id']", $(this).parents()).val();
+                        var name = hiddenText.attr('name');
+                        $.post('/formbuilder/elements/ajax/set/remove/' + hash, {
+                            'ajax' : true,
+                            'form_build_id' : form_build_id,
+                            'name' : name
+                        });
+                    }
                     item.remove();
                     parse();
                 });
@@ -117,13 +128,13 @@ Joost Elfering
                 }
             }
 
-            function parse() {
+            function parse(hashes) {
                 var items = textBase.val().split(options.separator);
-
                 for (var i = 0; i < items.length; i++) {
                     var trimmedItem = jQuery.trim(items[i]);
                     if (trimmedItem.length > 0) {
-                        addTag(trimmedItem);
+                        var hash = hashes[i];
+                        addTag(trimmedItem, hash);
                     }
                 }
 
@@ -186,7 +197,9 @@ Joost Elfering
             }
 
             if (options.initialParse) {
-                parse();
+                var hashes = $('div.set-hash-tags', textBase.parent()).text();
+                hashes = hashes.split(';');
+                parse(hashes);
             }
 
             if (options.completeOnBlur) {

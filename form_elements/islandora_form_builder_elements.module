@@ -80,6 +80,12 @@ function islandora_form_builder_elements_menu() {
     'access arguments' => array(ObjectHelper::$INGEST_FEDORA_OBJECTS),
     'file' => 'includes/TabPanel.inc',
   );
+  $items['formbuilder/elements/ajax/set/remove'] = array(
+    'page callback' => 'islandora_form_builder_elements_ajax_set_remove',
+    'type' => MENU_CALLBACK,
+    'access arguments' => array(ObjectHelper::$INGEST_FEDORA_OBJECTS),
+    'file' => 'includes/Set.inc',
+  );
   $items['autocomplete_marcrelator/%'] = array(
     'title' => 'autocomplete',
     'page callback' => 'islandora_form_builder_elements_autocomplete_marcrelator',

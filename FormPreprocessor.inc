@@ -60,10 +60,13 @@ class FormPreprocessor {
       $this->processChildContent($form['content'], $parent);
     }
     else {
-      $properties = $this->getFormBuilderProperties($form);
-      if ($properties) {
-        $value = isset($form['#value']) ? $form['#value'] : '';
-        $parent['#children'][] = array('#form_builder' => $properties, '#value' => $value);
+      $type = $form['#type'];
+      $func = 'process' . $type . 'ChildElement';
+      if (is_callable(array($this, $func))) {
+        call_user_func_array(array($this, $func), array(&$form, &$parent));
+      }
+      else {
+        $this->defaultProcessChildElement($form, $parent);
       }
     }
   }
@@ -81,11 +84,88 @@ class FormPreprocessor {
       $this->processContent($form['content'], $processed_form);
     }
     else {
-      $properties = $this->getFormBuilderProperties($form);
-      if ($properties) {
-        $value = isset($form['#value']) ? $form['#value'] : '';
-        $processed_form[] = array('#form_builder' => $properties, '#value' => $value);
+      $type = $form['#type'];
+      $func = 'process' . $type . 'Element';
+      if (is_callable(array($this, $func))) {
+        call_user_func_array(array($this, $func), array(&$form, &$processed_form));
       }
+      else {
+        $this->defaultProcessElement($form, $processed_form);
+      }
+    }
+  }
+
+  /**
+   *
+   * @param <type> $form
+   * @param <type> $processed_form
+   */
+  private function processSetElement(&$form, &$processed_form) {
+    $properties = $this->getFormBuilderProperties($form);
+    if ($properties) {
+      $values = explode(';', $form['#value']);
+      $hashes = isset($properties['hash']) ? $properties['hash'] : array();
+      $i = 1; // XPath starts at 1
+      while ($value = array_shift($values)) {
+        $form_builder = $properties;
+        $form_builder['path'][0] .= "[$i]";
+        $hash = array_shift($hashes);
+        if (isset($hash)) {
+          $form_builder['hash'] = $hash;
+        }
+        $processed_form[] = array('#form_builder' => $form_builder, '#value' => $value);
+        $i++;
+      }
+    }
+  }
+
+  /**
+   *
+   * @param <type> $form
+   * @param <type> $parent
+   */
+  private function processSetChildElement(&$form, &$parent) {
+    $properties = $this->getFormBuilderProperties($form);
+    if ($properties) {
+      $values = explode(';', $form['#value']);
+      $hashes = isset($properties['hash']) ? $properties['hash'] : array();
+      $i = 1; // XPath starts at 1
+      while ($value = array_shift($values)) {
+        $form_builder = $properties;
+        $form_builder['path'][0] .= "[$i]";
+        $hash = array_shift($hashes);
+        if ($hash) {
+          $form_builder['hash'] = $hash;
+        }
+        $parent['#children'][] = array('#form_builder' => $form_builder, '#value' => $value);
+        $i++;
+      }
+    }
+  }
+
+  /**
+   *
+   * @param <type> $form
+   * @param <type> $processed_form
+   */
+  private function defaultProcessElement(&$form, &$processed_form) {
+    $properties = $this->getFormBuilderProperties($form);
+    if ($properties) {
+      $value = isset($form['#value']) ? $form['#value'] : '';
+      $processed_form[] = array('#form_builder' => $properties, '#value' => $value);
+    }
+  }
+
+  /**
+   *
+   * @param <type> $form
+   * @param <type> $processed_form
+   */
+  private function defaultProcessChildElement(&$form, &$parent) {
+    $properties = $this->getFormBuilderProperties($form);
+    if ($properties) {
+      $value = isset($form['#value']) ? $form['#value'] : '';
+      $parent['#children'][] = array('#form_builder' => $properties, '#value' => $value);
     }
   }
 
@@ -229,6 +309,11 @@ class FormPreprocessor {
     $properties = $this->getFormBuilderProperties($branch);
     $has_children = isset($branch['#children']);
     if (!$has_children) {
+      if(!isset($branch['#value'])) {
+        $i = 0;
+        $i++;
+        $break_here;
+      }
       $value = $branch['#value'];
       $require_value = $properties['require_value'];
       $valid_value = is_string($value) && (!$require_value ? TRUE : trim($value) !== '');

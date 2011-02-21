@@ -205,6 +205,17 @@ function &ife_get_tabpanel_content(&$form, $clicked_button) {
   return $point;
 }
 
+function &ife_get_tabpanel(&$form, $clicked_button) {
+  $parents = $clicked_button['#array_parents'];
+  $depth = count($parents) - 3; // The button element and the tab its under decreases the depth by 2
+  $point = &$form;
+  for ($i = 0; $i < $depth; $i++) {
+    $point = &$point[$parents[$i]];
+  }
+  return $point;
+}
+
+
 /**
  * Calculates the number of tab panels.
  *
@@ -310,7 +321,8 @@ function ife_add_tabpanel(&$form, $clicked_button) {
   $content = &ife_get_tabpanel_content($form, $clicked_button);
   $count = ife_count_tabpanels($content);
   $content[$count] = $content[0];
-  $content[$count]['#form_builder'] = $form['#form_builder'];
+  $tabpanel = &ife_get_tabpanel($form, $clicked_button);
+  $content[$count]['#form_builder'] = $tabpanel['#form_builder'];
   $xpath_index = $count + 1;
   $content[$count]['#form_builder']['path'][0] = ''; // New Element, so we can't find it on the path
   unset($content[$count]['#form_builder']['hash']); // New Element, no hash.
