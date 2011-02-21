@@ -8,14 +8,8 @@
  * Creates new form elements and modifies existing ones to suit for use with the Islandora Form Builder Module.
  * 
  */
-module_load_include('inc', 'islandora_form_builder_elements', 'includes/Fieldset');
-module_load_include('inc', 'islandora_form_builder_elements', 'includes/TextField');
-module_load_include('inc', 'islandora_form_builder_elements', 'includes/TextArea');
-module_load_include('inc', 'islandora_form_builder_elements', 'includes/Select');
-module_load_include('inc', 'islandora_form_builder_elements', 'includes/List');
-module_load_include('inc', 'islandora_form_builder_elements', 'includes/FileChooser');
-module_load_include('inc', 'islandora_form_builder_elements', 'includes/DatePicker');
-module_load_include('inc', 'islandora_form_builder_elements', 'includes/tabpanel');
+module_load_include('inc', 'islandora_form_builder_elements', 'Utilities');
+islandora_form_builder_elements_load_all_include_files();
 
 /**
  * Implements hook_elements. Registers Elements.
@@ -25,48 +19,35 @@ module_load_include('inc', 'islandora_form_builder_elements', 'includes/tabpanel
 function islandora_form_builder_elements_elements() {
   $type['fieldset'] = array(
     '#input' => TRUE,
-    '#process' => array('ife_fieldset_process'),
+    '#process' => array('islandora_form_builder_elements_process_fieldset'),
   );
   $type['textfield'] = array(
     '#input' => TRUE,
-    '#sticky' => FALSE,
-    '#process' => array('ife_sticky_textfield_process', 'TextField::process'),
   );
   $type['textarea'] = array(
     '#input' => TRUE,
-    '#sticky ' => FALSE,
-    '#process' => array('ife_sticky_textarea_process'),
   );
   $type['select'] = array(
     '#input' => TRUE,
-    '#sticky ' => FALSE,
-    '#process' => array('ife_sticky_select_process'),
   );
-  $type['list'] = array(
+  $type['set'] = array(
     '#input' => TRUE,
-    '#element_validate' => array('ife_list_validate'),
-    '#process' => array('ife_list_process'),
-    '#sticky' => FALSE,
-  );
-  $type['other_select'] = array(
-    '#input' => TRUE,
-    '#process' => array('ife_other_select_process'),
+    '#process' => array('islandora_form_builder_elements_process_set'),
   );
   $type['filechooser'] = array(
     '#input' => TRUE,
     '#path' => '',
     '#model' => '',
     '#collection' => '',
-    '#process' => array('ife_filechooser_process'),
-    '#element_validate' => array('ife_filechooser_validate'),
+    '#process' => array('islandora_form_builder_elements_process_filechooser'),
+    '#element_validate' => array('islandora_form_builder_elements_validate_filechooser'),
   );
   $type['datepicker'] = array(
     '#input' => TRUE,
-    '#process' => array('ife_datepicker_process'),
   );
   $type['tabpanel'] = array(
     '#input' => TRUE,
-    '#process' => array('ife_tabpanel_process'),
+    '#process' => array('islandora_form_builder_elements_process_tabpanel'),
   );
   return $type;
 }
@@ -78,18 +59,11 @@ function islandora_form_builder_elements_elements() {
  */
 function islandora_form_builder_elements_theme() {
   return array(
-    'sticky_textfield' => array('arguments' => array('element')),
-    'sticky_textarea' => array('arguments' => array('element')),
-    'sticky_select' => array('arguments' => array('element')),
-    'filechooser' => array('arguments' => array('element'), 'file' => 'includes/filechooser.inc'),
-    'list' => array('arguments' => array('element')),
-    'other_select' => array('arguments' => array('element')),
-    'people' => array('arguments' => array('element'), 'file' => 'includes/people.inc'),
-    'people_items' => array('arguments' => array('form' => NULL), 'file' => 'includes/people.inc'),
-    'datepicker' => array('arguments' => array('element')),
-    'copyright' => array('arguments' => array('element')),
-    'tabpanel' => array('arguments' => array('element'), 'file' => 'includes/tabpanel.inc'),
-    'tabpanel_items' => array('arguments' => array('form' => NULL, 'element'), 'file' => 'includes/tabpanel.inc'),
+    'filechooser' => array('arguments' => array('element'), 'file' => 'includes/FileChooser.inc'),
+    'datepicker' => array('arguments' => array('element'), 'file' => 'includes/DatePicker.inc'),
+    'set' => array('arguments' => array('element'), 'file' => 'includes/Set.inc'),
+    'tabpanel' => array('arguments' => array('element'), 'file' => 'includes/TabPanel.inc'),
+    'tabpanel_items' => array('arguments' => array('form' => NULL, 'element'), 'file' => 'includes/TabPanel.inc'),
   );
 }
 
@@ -100,75 +74,66 @@ function islandora_form_builder_elements_theme() {
  */
 function islandora_form_builder_elements_menu() {
   module_load_include('inc', 'fedora_repository', 'ObjectHelper');
-  $items = array();
-  $items['ife/people_ahah'] = array(
-    'page callback' => 'ife_people_ahah',
+  $items['formbuilder/elements/ahah/tabpanel'] = array(
+    'page callback' => 'islandora_form_builder_elements_ahah_tabpanel',
     'type' => MENU_CALLBACK,
     'access arguments' => array(ObjectHelper::$INGEST_FEDORA_OBJECTS),
-    'file' => 'includes/people.inc',
-  );
-  $items['ife/tabpanel_ahah'] = array(
-    'page callback' => 'ife_tabpanel_ahah',
-    'type' => MENU_CALLBACK,
-    'access arguments' => array(ObjectHelper::$INGEST_FEDORA_OBJECTS),
-    'file' => 'includes/tabpanel.inc',
+    'file' => 'includes/TabPanel.inc',
   );
   $items['autocomplete_marcrelator/%'] = array(
     'title' => 'autocomplete',
-    'page callback' => 'ife_autocomplete_marcrelator',
+    'page callback' => 'islandora_form_builder_elements_autocomplete_marcrelator',
     'page arguments' => array(1),
     'type' => MENU_CALLBACK,
     'access arguments' => array(ObjectHelper::$INGEST_FEDORA_OBJECTS),
-    'file' => 'includes/autocomplete.inc'
+    'file' => 'includes/AutoComplete.inc'
   );
   $items['autocomplete_gacs/%'] = array(
     'title' => 'autocomplete',
-    'page callback' => 'ife_autocomplete_gacs',
+    'page callback' => 'islandora_form_builder_elements_autocomplete_gacs',
     'page arguments' => array(1),
     'type' => MENU_CALLBACK,
     'access arguments' => array(ObjectHelper::$INGEST_FEDORA_OBJECTS),
-    'file' => 'includes/autocomplete.inc'
+    'file' => 'includes/AutoComplete.inc'
   );
   $items['autocomplete_language/%'] = array(
     'title' => 'autocomplete',
-    'page callback' => 'ife_autocomplete_language',
+    'page callback' => 'islandora_form_builder_elements_autocomplete_language',
     'page arguments' => array(1),
     'type' => MENU_CALLBACK,
     'access arguments' => array(ObjectHelper::$INGEST_FEDORA_OBJECTS),
-    'file' => 'includes/autocomplete.inc'
+    'file' => 'includes/AutoComplete.inc'
   );
   $items['autocomplete_person/%'] = array(
     'title' => 'autocomplete',
-    'page callback' => 'ife_autocomplete_person',
+    'page callback' => 'islandora_form_builder_elements_autocomplete_person',
     'page arguments' => array(1),
     'type' => MENU_CALLBACK,
     'access arguments' => array(ObjectHelper::$INGEST_FEDORA_OBJECTS),
-    'file' => 'includes/autocomplete.inc'
+    'file' => 'includes/AutoComplete.inc'
   );
   $items['autocomplete/%/%'] = array(
     'title' => 'autocomplete',
-    'page callback' => 'ife_autocomplete',
+    'page callback' => 'islandora_form_builder_elements_autocomplete',
     'page arguments' => array(1, 2),
     'type' => MENU_CALLBACK,
     'access arguments' => array(ObjectHelper::$INGEST_FEDORA_OBJECTS),
-    'file' => 'includes/autocomplete.inc',
+    'file' => 'includes/AutoComplete.inc',
   );
-
   $items['filechooser/getThumbnail/%/%/%'] = array(
     'title' => 'getThumbnail',
-    'page callback' => 'ife_filechooser_get_thumbnail',
+    'page callback' => 'islandora_form_builder_elements_filechooser_get_thumbnail',
     'page arguments' => array(2, 3, 4),
     'type' => MENU_CALLBACK,
     'access arguments' => array(ObjectHelper::$INGEST_FEDORA_OBJECTS),
-    'file' => 'includes/filechooser.inc'
+    'file' => 'includes/FileChooser.inc'
   );
   $items['filechooser/generatePreview/%/%'] = array(
     'title' => 'generatePreview',
-    'page callback' => 'ife_filechooser_generate_thumbnails',
     'page arguments' => array(2, 3),
     'type' => MENU_CALLBACK,
     'access arguments' => array(ObjectHelper::$INGEST_FEDORA_OBJECTS),
-    'file' => 'includes/filechooser.inc'
+    'file' => 'includes/FileChooser.inc'
   );
   return $items;
 }

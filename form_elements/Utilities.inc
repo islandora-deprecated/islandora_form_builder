@@ -2,7 +2,24 @@
 
 // $Id$
 
-$form_element_class_and_file;
+/**
+ * @file
+ * 
+ * Useful global functions.
+ */
+
+function islandora_form_builder_elements_load_all_include_files() {
+  $include_path = drupal_get_path('module', 'islandora_form_builder_elements') . "/includes";
+  $dir = opendir($include_path);
+  if ($dir !== false) {
+    while (($file = readdir($dir)) !== false) {
+      if (preg_match('/\.inc$/', $file)) {
+        require_once "$include_path/$file";
+      }
+    }
+    closedir($dir);
+  }
+}
 
 /**
  * Includes the proper file and returns the class name for that class.
@@ -14,7 +31,7 @@ $form_element_class_and_file;
  */
 function islandora_form_builder_elements_get_class_name_and_file_name_of_form_element_type($type) {
   global $form_element_class_and_file;
-  if(isset($form_element_class_and_file[$type])) {
+  if (isset($form_element_class_and_file[$type])) {
     return $form_element_class_and_file[$type];
   }
   $include_path = drupal_get_path('module', 'islandora_form_builder_elements') . "/includes";

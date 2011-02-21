@@ -18,11 +18,11 @@ class TabPanel {
    */
   static public function populate(&$form, &$registered_nodes) {
     $i = 0;
-    foreach($registered_nodes as &$registered_node) {
+    foreach ($registered_nodes as &$registered_node) {
       list($hash, $node) = $registered_node;
       $form['content'][$i] = $form['content'][0];
       $form['content'][$i]['#form_builder'] = $form['#form_builder'];
-      $form['content'][$i]['#form_builder']['path'][0] .= '['. $i + 1 .']'; // XPath indices start at 1
+      $form['content'][$i]['#form_builder']['path'][0] .= '[' . $i + 1 . ']'; // XPath indices start at 1
       $form['content'][$i]['#form_builder']['hash'] = $hash;
       $i++;
     }
@@ -126,7 +126,7 @@ class TabPanel {
       '#value' => t("$id-add-tab"), // Unique
       '#action' => 'add',
       '#ahah' => array(
-        'path' => 'ife/tabpanel_ahah',
+        'path' => 'formbuilder/elements/ahah/tabpanel',
         'wrapper' => $wrapper,
         'method' => 'replace',
         'effect' => 'fade'
@@ -152,7 +152,7 @@ class TabPanel {
         '#action' => 'remove',
         '#tab' => $count,
         '#ahah' => array(
-          'path' => 'ife/tabpanel_ahah',
+          'path' => 'formbuilder/elements/ahah/tabpanel',
           'wrapper' => $wrapper,
           'method' => 'replace',
           'effect' => 'fade'
@@ -406,7 +406,7 @@ function ife_find_clicked_button($form, $form_state) {
  *
  * Depending on the button clicked this will remove a panel or add one.
  */
-function ife_tabpanel_ahah() {
+function islandora_form_builder_elements_ahah_tabpanel() {
   if (!isset($_POST['form_build_id']))
     return;
   $form_state = array('storage' => NULL, 'submitted' => FALSE, 'post' => $_POST);
@@ -445,6 +445,24 @@ function ife_tabpanel_ahah() {
 }
 
 /**
+ * Expands the TabPanel form element.
+ *
+ * @param array $form
+ *   Drupal tabpanel form element.
+ * @param string $edit
+ *   Not used.
+ * @param array $form_state
+ *   The state of the drupal form.
+ *
+ * @return array
+ *   Modified drupal tabpanel form element.
+ */
+function islandora_form_builder_elements_process_tabpanel(&$form, $edit, &$form_state) {
+  $tab_panel = new TabPanel();
+  return $tab_panel->process($form, $form_state);
+}
+
+/**
  * Theme hook for a tabpanel
  */
 function theme_tabpanel($element) {
@@ -457,16 +475,3 @@ function theme_tabpanel($element) {
 function theme_tabpanel_items($form) {
   return TabPanel::themeEachTab($form);
 }
-
-/**
- *
- * @param <type> $element
- * @param <type> $edit
- * @param <type> $form_state
- * @return string 
- */
-function ife_tabpanel_process(&$form, $edit, &$form_state) {
-  $tab_panel = new TabPanel();
-  return $tab_panel->process($form, $form_state);
-}
-

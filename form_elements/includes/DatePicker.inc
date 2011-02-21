@@ -12,34 +12,6 @@
  */
 class DatePicker {
 
-  public static function populate(&$form, &$registered_nodes) {
-    drupal_set_message('Date Picker Auto Populate has not been implemented yet.');
-  }
-
-}
-
-//-------------------------------------------------------------------------------
-// ife_datepicker_process
-// Params:
-//  element -
-//  edit -
-//  form_state -
-// Returns:
-//
-// Our process callback to expand the control.
-//-------------------------------------------------------------------------------
-function ife_datepicker_process($element, $edit, &$form_state) {
-  if (isset($element['#sticky']) && $element['#sticky'] == TRUE) {
-    $stickyName = preg_replace('/\]/', '', array_pop(preg_split('/\[/', $element['#name']))) . '-sticky';
-    if (isset($element['#post'][$stickyName]) && strtolower($element['#post'][$stickyName]) == 'on') {
-      $form_state['storage'][$element['#name']] = $element['#value'];
-    }
-    elseif (isset($form_state['storage'][$element['#name']])) {
-      $element['#value'] = $form_state['storage'][$element['#name']];
-      $element['#sticky_on'] = TRUE;
-    }
-  }
-  return $element;
 }
 
 /**
@@ -81,12 +53,7 @@ function theme_datepicker($element) {
     $output .= ' <span class="field-suffix">' . $element['#field_suffix'] . '</span>';
   }
 
-  $path = drupal_get_path('module', 'islandora_form_builder_elements');
-  drupal_add_css($path . '/css/sticky.css');
-  $stickyName = preg_replace('/\]/', '', array_pop(preg_split('/\[/', $element['#name']))) . '-sticky';
-  $sticky = (isset($element['#sticky']) && $element['#sticky'] == TRUE ? '<input class="sticky" type="checkbox" name="' . $stickyName . '"' . (isset($element['#sticky_on']) && $element['#sticky_on'] == TRUE ? ' checked="checked"' : '') . '/><br/>' : '');
-
   $output.='</div>';
 
-  return theme('form_element', $element, $output . $sticky) . $extra;
+  return theme('form_element', $element, $output) . $extra;
 }

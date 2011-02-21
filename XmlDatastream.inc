@@ -160,7 +160,7 @@ abstract class XmlDatastreamFormDocument extends DOMDocument {
    */
   private function modifyExistingDocument(&$document, &$form) {
     // Build a list of the remaining 
-// Remove element by unused hashes.
+    // Remove element by unused hashes.
   }
 
   /**

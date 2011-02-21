@@ -254,9 +254,23 @@ class FormGenerator {
    *   The Drupal Form element to be altered.
    */
   private function alterTabPanelFormElement(&$form) {
-    $form['#form_builder'];
-    $form['content'][0]['#form_builder'] = $form['#form_builder'];
-    $form['content'][0]['#form_builder']['path'][0] .= '[1]';
+    if (isset($form['#form_builder'])) {
+      $form['content'][0]['#form_builder'] = $form['#form_builder'];
+      $form['content'][0]['#form_builder']['path'][0] .= '[1]';
+    }
+  }
+
+  /**
+   * Alter the generated FieldSet Form Element.
+   *
+   * @param DOMElement $form
+   *   The Drupal Form element to be altered.
+   */
+  private function alterFieldSetFormElement(&$form) {
+    if (isset($form['#form_builder'])) {
+      $form['content'][0]['#form_builder'] = $form['#form_builder'];
+      $form['content'][0]['#form_builder']['path'][0] .= '[1]';
+    }
   }
 
 }

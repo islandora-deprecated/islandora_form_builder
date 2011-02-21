@@ -235,9 +235,12 @@ class FormPopulator {
     $type = $form['#type'];
     $properties = isset($form['#form_builder']) ? $form['#form_builder'] : NULL;
     if ($properties) {
+      $node_name = $parent_node->nodeName;
       $node_list = $this->queryPath($properties, $parent_node);
       $registered_nodes = $this->registerNodes($node_list);
-      $this->populateType($type, $form, $registered_nodes);
+      if (count($registered_nodes) > 0) {
+        $this->populateType($type, $form, $registered_nodes);
+      }
     }
   }
 
