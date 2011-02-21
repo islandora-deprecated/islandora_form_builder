@@ -307,7 +307,7 @@ class FormPopulator {
    */
   private function defaultPopulateType(&$form, &$registered_nodes) {
     list($hash, $node) = $registered_nodes[0];
-    $form['#default_value'] = $node->textContent;
+    $form['#default_value'] = trim($node->textContent);
     $form['#form_builder']['hash'] = $hash;
   }
 

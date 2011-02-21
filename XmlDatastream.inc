@@ -57,6 +57,11 @@ abstract class XmlDatastreamFormDocument extends DOMDocument {
    * @var string[]
    */
   protected $paths;
+  /**
+   * A map where the key's are hash's and the values are DOMNode's. Used in editing an existing document.
+   * @var array
+   */
+  protected $hashMap;
 
   /**
    * Create a XmlDatastreamForm.
@@ -109,8 +114,8 @@ abstract class XmlDatastreamFormDocument extends DOMDocument {
   private function createDocument() {
     if ($this->shouldModifyExistingDocument()) { // Edit forms.
       $document = $this->getExistingDocument();
-      $this->modifyExistingDocument($document, $this->preprocessedForm);
       $this->loadXML($document->saveXML()); // Is importing quicker?
+      $this->modifyExistingDocument($this->preprocessedForm, $root);
     }
     else {
       $root = $this->createRootElement();
@@ -158,9 +163,55 @@ abstract class XmlDatastreamFormDocument extends DOMDocument {
    * @param array $form
    *   Submitted form.
    */
-  private function modifyExistingDocument(&$document, &$form) {
-    // Build a list of the remaining 
-    // Remove element by unused hashes.
+  private function modifyExistingDocument(&$form, &$parent_node) {
+    $this->hashMap = $this->mapHashesToNodes();
+    $this->removeDeletedNodes($form);
+    $this->modifyDocument($form, $parent_node);
+  }
+
+  private function modifyDocument(&$form, &$parent_node) {
+    foreach ($form as $index => $form_element) { // This loop may change based on values ...
+      $node = $this->createOrModifyNode($form_element, $parent_node);
+      if (isset($form_element['#children'])) {
+        $this->modifyDocument($form_element['#children'], $node);
+      }
+    }
+  }
+
+  private function mapHashesToNodes() {
+    $hashes = $this->storage['hashes']; // Copy
+    foreach ($hashes as $hash => $path) {
+      $result = $this->xpath->query($path);
+      if ($result->length == 1) {
+        $hash_map[$hash] = $result->item(0);
+      }
+    }
+    return $hash_map;
+  }
+
+  private function removeDeletedNodes(&$form) {
+    $hashes_to_remove = $this->getRemovedHashes($this->hashMap, $form);
+    foreach ($hashes_to_remove as $hash => $node) {
+      $node->parentNode->removeChild($node);
+      unset($this->hashMap[$hash]);
+    }
+  }
+
+  private function getRemovedHashes($hash_map, &$form) {
+    $this->removeHashIfFound($form, $hash_map);
+    return $hash_map;
+  }
+
+  private function removeHashIfFound(&$hash_map, &$form) {
+    foreach ($form as $form_element) {
+      $hash = $form_element['#form_builder']['hash'];
+      if (isset($hash)) {
+        unset($hash_map[$hash]);
+      }
+      if (isset($form_element['#children'])) {
+        $this->removeHashIfFound($hash_map, $form_element['#children']);
+      }
+    }
   }
 
   /**
@@ -207,10 +258,14 @@ abstract class XmlDatastreamFormDocument extends DOMDocument {
    *   DOMNode if found, FALSE otherwise.
    */
   private function findNode($properties, $parent_node) {
+    $hash = isset($properties['hash']) ? $properties['hash'] : NULL;
+    if($hash) {
+      return $this->hashMap[$hash]; 
+    }
     list($path, $full) = $properties['path'];
     if ($full) {
       $result = $this->xpath->query($path);
-      if($result == FALSE) {
+      if ($result == FALSE) {
         $break_here;
       }
       return $result->length == 1 ? $result->item(0) : FALSE;

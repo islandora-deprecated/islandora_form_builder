@@ -121,24 +121,19 @@ class EditFormBuilder implements FormBuilderInterface {
    */
   public function submitForm(&$form) {
     global $base_url;
-
-    module_load_include('inc', 'islandora_form_builder', 'ModsDatastreamForm');
-    //$mods = new ModsDocument($form, $this->formState);
     module_load_include('inc', 'fedora_repository', 'ContentModel');
     $content_model = ContentModel::loadFromObject($this->pid);
     list($class) = $this->loadDocumentClass($content_model);
     $document = new $class($form, $this->formState);
-    echo $document->saveXML();
-    exit();
-//    $this->modifyDatastream($mods, "{$this->dsid}", "{$this->dsid} Record", 'text/xml');
-//    $transform = drupal_get_path('module', 'islandora_form_builder') . '/transforms/mods_to_dc.xsl';
-//    $dublin_core = $this->transformDocumentIntoDublinCore($mods, $transform);
-//    $dublin_core->version = "1.0";
-//    $dublin_core->encoding = "UTF-8";
-//    $dublin_core->formatOutput = TRUE;
-//    $this->modifyDatastream($dublin_core, 'DC', "Dublin Core Record", 'text/xml');
-//    $this->formState['storage'] = NULL;
-//    $form_state['redirect'] = $base_url . '/fedora/repository/' . $form_state['values']['pid'];
+    $this->modifyDatastream($document, "{$this->dsid}", "{$this->dsid} Record", 'text/xml');
+    $transform = drupal_get_path('module', 'islandora_form_builder') . '/transforms/mods_to_dc.xsl'; // TODO add transform to content modeler ...
+    $dublin_core = $this->transformDocumentIntoDublinCore($document, $transform);
+    $dublin_core->version = "1.0";
+    $dublin_core->encoding = "UTF-8";
+    $dublin_core->formatOutput = TRUE;
+    $this->modifyDatastream($dublin_core, 'DC', "Dublin Core Record", 'text/xml');
+    $this->formState['storage'] = NULL;
+    $this->formState['redirect'] = $base_url . '/fedora/repository/' . $this->pid;
   }
 
   /**
@@ -151,7 +146,7 @@ class EditFormBuilder implements FormBuilderInterface {
    */
   private function transformDocumentIntoDublinCore($document, $transform) {
     $xsl = new DOMDocument();
-    $xsl->load($tranform);
+    $xsl->load($transform);
     $xslt = new XSLTProcessor();
     $xslt->importStyleSheet($xsl);
     return $xslt->transformToDoc($document);
