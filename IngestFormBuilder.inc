@@ -338,16 +338,18 @@ class IngestFormBuilder implements FormBuilderInterface {
       $content_model = ContentModel::loadFromModel($this->contentModelPid, $this->contentModelDsid);
       if ($content_model !== FALSE) {
         module_load_include('inc', 'islandora_form_builder', 'FoxmlForm');
-        module_load_include('inc', 'islandora_form_builder', 'ModsDatastreamForm');
+        $class = $this->loadDocumentClass($content_model);
         $label = "";
         $pid = $collection_policy->getNextPid($this->contentModelDsid);
         $ingest_file_location = isset($this->formState['values']['ingest-file-location']) ? $this->formState['values']['ingest-file-location'] : NULL;
-
-        $document = new ModsDocument($form, $this->formState);
+        $document = new $class($form, $this->formState);
+        echo $document->saveXML();
         $transform = drupal_get_path('module', 'islandora_form_builder') . '/transforms/mods_to_dc.xsl';
         $foxml = new FoxmlDocument($label, $pid, $this->contentModelDsid, $this->contentModelPid, $this->collectionPid, $relationship, $ingest_file_location, $document, $transform);
-        $error = $foxml->ingest();
-
+        echo $foxml->saveXML();
+        $error = FALSE;
+        exit();
+        //$error = $foxml->ingest();
         $_SESSION['fedora_ingest_files'] = ''; //empty this variable
 //        $attributes = $content_model->getIngestFormAttributes();
 //        $should_redirect = $attributes['redirect'];
@@ -358,8 +360,25 @@ class IngestFormBuilder implements FormBuilderInterface {
     }
     if ($should_redirect) {
       global $base_url;
-      $this->formState['redirect'] = ($error) ? ' ' : $base_url . "/fedora/repository/{$this->collectionPid}";
+      $this->formState['redirect'] = ($error) ? '' : $base_url . "/fedora/repository/{$this->collectionPid}";
     }
+  }
+
+  /**
+   * Loads the appropriate class file, and returns the class name.
+   * 
+   * @param ContentModel $content_model
+   * @return string
+   */
+  private function loadDocumentClass($content_model) {
+    $form = $content_model->getForm($this->formName);
+    $module = $form->getAttribute('module');
+    $file = $form->getAttribute('file');
+    $class = $form->getAttribute('class');
+    $dsid = $form->getAttribute('dsid');
+    $path = drupal_get_path('module', $module);
+    require_once "$path/$file";
+    return $class;
   }
 
 }

@@ -280,8 +280,8 @@ abstract class XmlDatastreamFormDocument extends DOMDocument {
    * @return DOMElement
    */
   private function createElementNode($element, $value, $parent) {
-    list($prefix, $name) = explode(':', $element);
-    if (isset($prefix) && isset($name)) {
+    if (strpos($element, ':') !== FALSE) {
+      list($prefix, $name) = explode(':', $element);
       $node = $this->createElementNS($this->nameSpaces[$prefix], $element, $value);
       return $parent->appendChild($node);
     }
@@ -301,8 +301,8 @@ abstract class XmlDatastreamFormDocument extends DOMDocument {
    * @return DOMAttr
    */
   private function createAttributeNode($attribute, $value, $parent) {
-    list($prefix, $name) = explode(':', $attribute);
-    if (isset($prefix) && isset($name)) {
+    if (strpos($attribute, ':') !== FALSE) {
+      list($prefix, $name) = explode(':', $attribute);
       return $parent->setAttributeNS($this->nameSpaces[$prefix], $attribute, $value);
     }
     else {

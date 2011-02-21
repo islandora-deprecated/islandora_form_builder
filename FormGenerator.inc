@@ -201,10 +201,10 @@ class FormGenerator {
     $result = $this->xpath->query('child::*', $form_element);
     for ($i = 0; $i < $result->length; $i++) {
       $child = $result->item($i);
-      $options[] = $child->textContent;
+      $options[$child->textContent] = $child->textContent;
     }
     // Should we use the first option as a prompt?
-    $ignore_first_option = $form_element->getAttribute('ignore_first_element') == 'true';
+    $ignore_first_option = $form_element->getAttribute('ignoreFirstOption') == 'true';
     if ($ignore_first_option) {
       $select_message = array_shift($options);
       $options = array_merge(array(NULL => $select_message), $options);

@@ -66,7 +66,7 @@ class Fieldset {
    *   TRUE if a element has a value FALSE otherwise.
    */
   private function anyElementHasValue(&$form) {
-    foreach ($form as $form_element) {
+    foreach ($form as &$form_element) {
       if ($this->isFormElement($form_element)) {
         $has_value = isset($element['#default_value']) || isset($element['#value']);
         if ($has_value) {
@@ -94,7 +94,7 @@ class Fieldset {
    *   The processed fieldset.
    */
   public function process(&$element, &$form_state) {
-    if (isset($element['#collapsed']) && $this->anyElementHasValue($element['content'])) {
+    if (isset($element['#collapsed']) && isset($element['content']) && $this->anyElementHasValue($element['content'])) {
       unset($element['#collapsed']);
     }
     return $element;

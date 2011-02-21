@@ -62,7 +62,8 @@ class FormPreprocessor {
     else {
       $properties = $this->getFormBuilderProperties($form);
       if ($properties) {
-        $parent['#children'][] = array('#form_builder' => $properties, '#value' => $form['#value']);
+        $value = isset($form['#value']) ? $form['#value'] : '';
+        $parent['#children'][] = array('#form_builder' => $properties, '#value' => $value);
       }
     }
   }
@@ -71,18 +72,19 @@ class FormPreprocessor {
    * Process a form element that has no parents.
    *
    * @param array $form
+   * @param array $proccessed_form
    *
    * @return array
    */
-  private function processFormElement(&$form) {
+  private function processFormElement(&$form, &$processed_form) {
     if (isset($form['content'])) {
-      return $this->processContent($form['content']);
+      $this->processContent($form['content'], $processed_form);
     }
     else {
       $properties = $this->getFormBuilderProperties($form);
       if ($properties) {
-        $form_element = array('#form_builder' => $properties, '#value' => $form['#value']);
-        return array($form_element);
+        $value = isset($form['#value']) ? $form['#value'] : '';
+        $processed_form[] = array('#form_builder' => $properties, '#value' => $value);
       }
     }
   }
@@ -97,9 +99,19 @@ class FormPreprocessor {
   private function processChildContent(&$content, &$parent) {
     $i = 0;
     while (isset($content[$i])) {
-      $preprocessed_form['#form_builder'] = $this->getFormBuilderProperties($content[$i]);
-      $this->preprocess($content[$i], $preprocessed_form);
-      $parent['#children'][] = $preprocessed_form;
+      $properties = $this->getFormBuilderProperties($content[$i]);
+      if ($properties) {
+        $preprocessed_form['#form_builder'] = $properties;
+        $this->processChildren($content[$i], $preprocessed_form);
+        $parent['#children'][] = $preprocessed_form;
+      }
+      else {
+        foreach ($content[$i] as $form) {
+          if ($this->canBeProcessed($form)) {
+            $this->processChildFormElement($form, $parent);
+          }
+        }
+      }
       $i++;
     }
   }
@@ -108,20 +120,26 @@ class FormPreprocessor {
    * Process a the content of a parentless form element.
    * 
    * @param array $content
-   *
-   * @return array
+   * @param array $processed_form
    */
-  private function processContent(&$content) {
-    $processed_content;
+  private function processContent(&$content, &$processed_form) {
     $i = 0;
     while (isset($content[$i])) {
       $properties = $this->getFormBuilderProperties($content[$i]);
-      $parent['#form_builder'] = $properties;
-      $this->processChildren($content[$i], $parent);
-      $processed_content[] = $parent;
+      if ($properties) {
+        $parent['#form_builder'] = $properties;
+        $this->processChildren($content[$i], $parent);
+        $processed_form[] = $parent;
+      }
+      else {
+        foreach ($content[$i] as $form) {
+          if ($this->canBeProcessed($form)) {
+            $this->processFormElement($form, $processed_form);
+          }
+        }
+      }
       $i++;
     }
-    return $processed_content;
   }
 
   /**
@@ -135,7 +153,7 @@ class FormPreprocessor {
    */
   private function canBeProcessed(&$form) {
     $has_type = isset($form['#type']);
-    return $has_type ? array_search($form['#type'], $this->allowedFormElements) : FALSE;
+    return $has_type ? array_search($form['#type'], $this->allowedFormElements) !== FALSE : FALSE;
   }
 
   /**
@@ -147,7 +165,7 @@ class FormPreprocessor {
    *   Returns an array of Form Builder properties, if found otherwise FALSE is returned.
    */
   private function getFormBuilderProperties(&$form) {
-    return is_array($form['#form_builder']) ? $form['#form_builder'] : FALSE;
+    return (isset($form['#form_builder']) && is_array($form['#form_builder'])) ? $form['#form_builder'] : FALSE;
   }
 
   /**
@@ -159,7 +177,7 @@ class FormPreprocessor {
     $processed_form = array();
     foreach ($this->form as $form) {
       if ($this->canBeProcessed($form)) {
-        $processed_form = array_merge($processed_form, $this->processFormElement($form));
+        $this->processFormElement($form, $processed_form);
       }
     }
     return $processed_form;
@@ -187,7 +205,7 @@ class FormPreprocessor {
    *   The pruned processed form.
    */
   private function prune(&$processed_form) {
-    foreach ($processed_form as $i => $element) {
+    foreach ($processed_form as $i => &$element) {
       if ($this->shouldBePruned($element)) {
         unset($processed_form[$i]);
       }
@@ -207,18 +225,18 @@ class FormPreprocessor {
    * @return boolean
    *   TRUE if this branch should be pruned FALSE otherwise.
    */
-  private function shouldBePruned($branch) {
+  private function shouldBePruned(&$branch) {
     $properties = $this->getFormBuilderProperties($branch);
     $has_children = isset($branch['#children']);
     if (!$has_children) {
       $value = $branch['#value'];
       $require_value = $properties['require_value'];
-      $valid_value = is_string($value) && (!$require_value) ? TRUE : trim($value) !== '';
-      return!$valid_value;
+      $valid_value = is_string($value) && (!$require_value ? TRUE : trim($value) !== '');
+      return !$valid_value;
     }
     else {
       $this->prune($branch['#children']);
-      return count($branch['#children']) == 0 && !$properties['require_value'];
+      return count($branch['#children']) == 0 && $properties['require_value'];
     }
   }
 
