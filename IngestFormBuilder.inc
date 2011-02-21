@@ -338,24 +338,16 @@ class IngestFormBuilder implements FormBuilderInterface {
       $content_model = ContentModel::loadFromModel($this->contentModelPid, $this->contentModelDsid);
       if ($content_model !== FALSE) {
         module_load_include('inc', 'islandora_form_builder', 'FoxmlForm');
-        $class = $this->loadDocumentClass($content_model);
+        list($class, $dsid) = $this->loadDocumentClass($content_model);
         $label = "";
         $pid = $collection_policy->getNextPid($this->contentModelDsid);
         $ingest_file_location = isset($this->formState['values']['ingest-file-location']) ? $this->formState['values']['ingest-file-location'] : NULL;
         $document = new $class($form, $this->formState);
-        echo $document->saveXML();
         $transform = drupal_get_path('module', 'islandora_form_builder') . '/transforms/mods_to_dc.xsl';
-        $foxml = new FoxmlDocument($label, $pid, $this->contentModelDsid, $this->contentModelPid, $this->collectionPid, $relationship, $ingest_file_location, $document, $transform);
-        echo $foxml->saveXML();
-        $error = FALSE;
-        exit();
-        //$error = $foxml->ingest();
+        $foxml = new FoxmlDocument($label, $pid, $dsid, $this->contentModelPid, $this->collectionPid, $relationship, $ingest_file_location, $document, $transform);
+        $error = $foxml->ingest();
         $_SESSION['fedora_ingest_files'] = ''; //empty this variable
-//        $attributes = $content_model->getIngestFormAttributes();
-//        $should_redirect = $attributes['redirect'];
-        if ($should_redirect) {
-          $this->formState['storage'] = NULL;
-        }
+        $this->formState['storage'] = NULL;
       }
     }
     if ($should_redirect) {
@@ -378,7 +370,7 @@ class IngestFormBuilder implements FormBuilderInterface {
     $dsid = $form->getAttribute('dsid');
     $path = drupal_get_path('module', $module);
     require_once "$path/$file";
-    return $class;
+    return array($class, $dsid);
   }
 
 }
