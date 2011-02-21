@@ -28,6 +28,17 @@ class ModsDocument extends XmlDatastreamFormDocument {
   }
 
   /**
+   * Gets the default namespace need for xpath to function.
+   * 
+   * @return array
+   */
+  public static function getDefaultNamespace() {
+    return array('mods', self::mods);
+  }
+
+  /**
+   * Gets a map of the required namespaces.
+   *
    * @return array
    *   A map of required namepaces where the key's are the prefixs and the values are URI's
    */
@@ -52,8 +63,8 @@ class ModsDocument extends XmlDatastreamFormDocument {
    * Correct/Add required root attributes.
    */
   private function setRootAttributes($root) {
+    $root->setAttribute('xmlns', self::mods);
     $root->setAttribute('xmlns:xlink', self::xlink);
-    $root->setAttribute('xmlns:mods', self::mods);
     $root->setAttribute('xmlns:xsi', self::xsi);
     $this->setCorrectVersion($root);
   }

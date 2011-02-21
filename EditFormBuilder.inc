@@ -86,8 +86,8 @@ class EditFormBuilder implements FormBuilderInterface {
     module_load_include('inc', 'islandora_form_builder', 'FormGenerator');
     module_load_include('inc', 'islandora_form_builder', 'FormPopulator');
     $form_generator = FormGenerator::CreateFromObject($this->pid);
-    $form[FORM_ROOT] = $form_generator->generate($this->formName); // TODO get from user .
-    $form_populator = new FormPopulator($this->formState, $this->pid, $this->dsid);
+    $form[FORM_ROOT] = $form_generator->generate($this->formName);
+    $form_populator = new FormPopulator($this->formState, $this->pid, $this->dsid, $this->formName);
     $form_populator->populate($form[FORM_ROOT]);
     $form['submit'] = array(
       '#type' => 'submit',
@@ -98,7 +98,8 @@ class EditFormBuilder implements FormBuilderInterface {
   }
 
   /**
-   *
+   * Not currently used...
+   * 
    * @param array $form
    *   Drupal form to be validated.
    */

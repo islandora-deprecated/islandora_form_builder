@@ -16,15 +16,15 @@ class TabPanel {
    * @param array $form
    * @param DOMNodeList $node_list
    */
-  static public function populate(&$form, &$node_list) {
-    module_load_include('inc', 'islandora_form_builder', 'FormPopulator');
-    for ($i = 0; $i < $node_list->length; $i++) {
-      $node = $node_list->item($i);
+  static public function populate(&$form, &$registered_nodes) {
+    $i = 0;
+    foreach($registered_nodes as &$registered_node) {
+      list($hash, $node) = $registered_node;
       $form['content'][$i] = $form['content'][0];
       $form['content'][$i]['#form_builder'] = $form['#form_builder'];
-      $xpath_index = $i + 1;
-      $form['content'][$i]['#form_builder']['path'][0] .= "[$xpath_index]";
-      $form['content'][$i]['#form_builder']['hash'] = FormPopulator::generateHash($node);
+      $form['content'][$i]['#form_builder']['path'][0] .= '['. $i + 1 .']'; // XPath indices start at 1
+      $form['content'][$i]['#form_builder']['hash'] = $hash;
+      $i++;
     }
   }
 

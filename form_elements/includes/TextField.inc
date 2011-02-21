@@ -8,13 +8,10 @@
  */
 class TextField {
 
-  public static function populate(&$form, &$node_list) {
-    module_load_include('inc', 'islandora_form_builder', 'FormPopulator');
-    if ($node_list->length == 1) {
-      $node = $node_list->item(0);
-      $form['#default_value'] = $node->textContent;
-      $form['#form_builder']['hash'] = FormPopulator::generateHash($node);
-    }
+  public static function populate(&$form, &$registered_nodes) {
+    list($hash, $node) = $registered_nodes[0];
+    $form['#default_value'] = $node->textContent;
+    $form['#form_builder']['hash'] = $hash;
   }
 
   public static function process(&$element, &$form_state) {

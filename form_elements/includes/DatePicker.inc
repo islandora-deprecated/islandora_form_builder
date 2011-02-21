@@ -7,6 +7,17 @@
  *
  */
 
+/**
+ * 
+ */
+class DatePicker {
+
+  public static function populate(&$form, &$registered_nodes) {
+    drupal_set_message('Date Picker Auto Populate has not been implemented yet.');
+  }
+
+}
+
 //-------------------------------------------------------------------------------
 // ife_datepicker_process
 // Params:

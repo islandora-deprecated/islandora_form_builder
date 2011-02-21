@@ -11,11 +11,17 @@
  * 
  */
 class Fieldset {
-  
-  public static function process($element, $edit, &$form_state) {
 
+  public static function populate(&$form, &$registered_nodes) {
+    drupal_set_message('Date Picker Auto Populate has not been implemented yet.');
   }
+
+  public static function process($element, $edit, &$form_state) {
+    
+  }
+
 }
+
 //-------------------------------------------------------------------------------
 // ife_fieldset_process
 // Params:

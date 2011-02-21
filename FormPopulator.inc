@@ -5,47 +5,74 @@
 /**
  * @file
  *
+ * Contains a class that populates form values from the specified fedora object.
  */
 module_load_include('inc', 'islandora_form_builder', 'Utilities');
 module_load_include('inc', 'islandora_form_builder_elements', 'Utilities');
-module_load_include('inc', 'fedora_repository', 'ContentModel');
 
 /**
- *
+ * Populates the values of a drupal form using #form_builder attributes, and the fedora object's
+ * Content Model.
  */
 class FormPopulator {
 
+  /**
+   * The fedora object to edit, datastreams from this item are used to populate the form.
+   * 
+   * @var Fedora_Item
+   */
   protected $item;
+  /**
+   * The datastream we are editing. This is used to populate existing form elements.
+   * 
+   * @var DOMDocument
+   */
   protected $xml;
+  /**
+   * The state of the drupal form.
+   *
+   * @var array
+   */
   protected $formState;
+  /**
+   * Persistant data used by the form builder module.
+   * 
+   * @var array
+   */
   protected $storage;
+  /**
+   * A list of the allowed drupal form elements.
+   *
+   * @var array
+   */
   protected $allowedFormElements;
+  /**
+   * The default prefix for the default namespaces of the document.
+   * @var string
+   */
+  protected $defaultPrefix;
 
   /**
-   * Generates a hash
-   * @param DOMNode $node
-   * @return string
-   */
-  public static function generateHash(&$node) {
-    list($hash, $path) = self::generateHashPath($node);
-    return $hash;
-  }
-
-  /**
-   * Generates a hash that can be used to identify this node.
+   * Generates a hash and xpath that can be used to identify this node.
    * 
    * @param DOMNode $node
-   * 
-   * @return hash
+   *   Node to generate the hash/path for.
+   * @param string $default_prefix
+   *   Default prefix to use if the node does not have one.
+   *
+   * @return array
+   *   An two index array where the first is the hash of the node and the second is an xpath to the node.
    */
-  public static function generateHashPath(&$node) {
+  public static function generateHashPath(&$node, $default_prefix) {
     $path = $node->nodeName;
+    $prefix = ($node->prefix == '') ? $default_prefix : $node->prefix;
     $index = self::findXPathIndexInParentElement($node);
-    $path = get_class($node) == 'DOMAttr' ? "@$path" : $path . "[$index]";
+    $path = get_class($node) == 'DOMAttr' ? "@$path" : "$prefix:$path" . "[$index]";
     $parent = $node;
     while (($parent = $parent->parentNode) && (get_class($parent) == 'DOMElement')) {
       $index = self::findXPathIndexInParentElement($parent);
-      $path = "{$parent->nodeName}[$index]/$path";
+      $prefix = ($parent->prefix == '') ? $default_prefix : $parent->prefix;
+      $path = "{$prefix}:{$parent->nodeName}[$index]/$path";
     }
     $path = "/$path";
     return array(md5($path), $path);
@@ -56,6 +83,7 @@ class FormPopulator {
    * Base 1 index, since it will be used by xpath.
    *
    * @param DOMNode $node
+   * 
    * @return int
    */
   private static function findXPathIndexInParentElement(&$node) {
@@ -71,23 +99,21 @@ class FormPopulator {
   }
 
   /**
+   * Creates a FormPopulator.
    *
    * @param array $form_state
+   *   The state of the drupal form.
    * @param string $pid
+   *   The pid of the fedora object to be edited/used for populating form fields.
    * @param string $dsid
+   *   The datastream ID of the datastream to be edited.
    */
-  function __construct(&$form_state, $pid, $dsid) {
+  function __construct(&$form_state, $pid, $dsid, $form_name) {
     $this->initializeStorage($form_state, $pid, $dsid);
     $this->xml = new DOMDocument();
     $this->xml->loadXML($this->storage['xml']);
     $this->xpath = new DOMXPath($this->xml);
-    // HACK
-    module_load_include('inc', 'islandora_form_builder', 'ModsDatastreamForm');
-    $namespaces = ModsDocument::getRequiredNamespaces();
-    foreach ($namespaces as $prefix => $uri) {
-      $this->xpath->registerNamespace($prefix, $uri);
-    }
-    // HACK
+    $this->registerNamespaces($form_name);
     $this->allowedFormElements = islandora_form_builder_elements_get_allowed_form_elements();
   }
 
@@ -103,6 +129,27 @@ class FormPopulator {
     if (!isset($this->storage['xml'])) {
       $this->item = new fedora_item($pid);
       $this->storage['xml'] = $this->item->get_datastream_dissemination($dsid);
+    }
+  }
+
+  /**
+   *
+   * @param string $form_name
+   */
+  private function registerNamespaces(&$form_name) {
+    module_load_include('inc', 'fedora_repository', 'ContentModel');
+    $content_model = ContentModel::loadFromObject($this->item->pid);
+    $form = $content_model->getForm($form_name);
+    $module = $form->getAttribute('module');
+    $file = $form->getAttribute('file');
+    $class = $form->getAttribute('class');
+    $path = drupal_get_path('module', $module);
+    require_once "$path/$file";
+    list($default_prefix) = $class::getDefaultNamespace();
+    $this->defaultPrefix = $default_prefix;
+    $namespaces = $class::getRequiredNamespaces();
+    foreach ($namespaces as $prefix => $uri) { // Default namespaces not supported yet...
+      $this->xpath->registerNamespace($prefix, $uri);
     }
   }
 
@@ -142,7 +189,7 @@ class FormPopulator {
    */
   private function isFormElement(&$form) {
     $has_type = isset($form['#type']);
-    return $has_type ? array_search($form['#type'], $this->allowedFormElements) : FALSE;
+    return $has_type ? array_search($form['#type'], $this->allowedFormElements) !== FALSE : FALSE;
   }
 
   /**
@@ -189,8 +236,8 @@ class FormPopulator {
     $properties = isset($form['#form_builder']) ? $form['#form_builder'] : NULL;
     if ($properties) {
       $node_list = $this->queryPath($properties, $parent_node);
-      $this->registerNodes($node_list);
-      $this->populateType($type, $form, $node_list);
+      $registered_nodes = $this->registerNodes($node_list);
+      $this->populateType($type, $form, $registered_nodes);
     }
   }
 
@@ -206,15 +253,22 @@ class FormPopulator {
   }
 
   /**
+   * Register all the nodes that are used to populate elements.
    *
    * @param DOMNodeList $node_list
+   *
+   * @return array
+   *   An map of the generated hashes and their respective DOMNodes.
    */
   private function registerNodes(&$node_list) {
+    $registered_nodes = array();
     for ($i = 0; $i < $node_list->length; $i++) {
       $node = $node_list->item($i);
-      list($hash, $path) = self::generateHashPath($node);
+      list($hash, $path) = self::generateHashPath($node, $this->defaultPrefix);
       $this->registerHashPath($hash, $path);
+      $registered_nodes[] = array($hash, $node);
     }
+    return $registered_nodes;
   }
 
   /**
@@ -229,14 +283,29 @@ class FormPopulator {
   /**
    *
    * @param <type> $type
-   * @param <type> $node_list
+   * @param <type> $registered_nodes
    */
-  private function populateType($type, &$form, &$node_list) {
+  private function populateType($type, &$form, &$registered_nodes) {
     list($class, $filename) = islandora_form_builder_elements_get_class_name_and_file_name_of_form_element_type($type);
-    require_once $filename;
-    if (method_exists($class, "populate")) {
-      call_user_func_array(array($class, "populate"), array(&$form, &$node_list));
+    if ($filename != '') {
+      require_once $filename;
+      if (is_callable("$class::populate")) {
+        call_user_func_array(array($class, "populate"), array(&$form, &$registered_nodes));
+        return;
+      }
     }
+    $this->defaultPopulateType($form, $registered_nodes);
+  }
+
+  /**
+   *
+   * @param <type> $form
+   * @param <type> $registered_nodes
+   */
+  private function defaultPopulateType(&$form, &$registered_nodes) {
+    list($hash, $node) = $registered_nodes[0];
+    $form['#default_value'] = $node->textContent;
+    $form['#form_builder']['hash'] = $hash;
   }
 
 }

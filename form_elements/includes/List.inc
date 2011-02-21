@@ -7,6 +7,17 @@
  *
  */
 
+/**
+ *
+ */
+class Set {
+
+  public static function populate(&$form, &$registered_nodes) {
+    drupal_set_message('Date Picker Auto Populate has not been implemented yet.');
+  }
+
+}
+
 //-------------------------------------------------------------------------------
 // ife_list_process
 // Params:
@@ -50,11 +61,11 @@ function theme_list($element) {
     completeOnBlur: true,
     });
     });";
-  drupal_add_js($js, 'inline');*/
+    drupal_add_js($js, 'inline'); */
   drupal_add_css($path . '/css/list.css');
 
 
-  //return theme('theme_form_element', $element, '<div class="container-inline mark">' . $element['#children'] . '</div>');
+//return theme('theme_form_element', $element, '<div class="container-inline mark">' . $element['#children'] . '</div>');
 
   $size = empty($element['#size']) ? 'size="25"' : ' size="' . $element['#size'] . '"';
   $maxlength = empty($element['#maxlength']) ? '' : ' maxlength="' . $element['#maxlength'] . '"';

@@ -4,7 +4,8 @@
 
 /**
  * @file
- * 
+ *
+ * Contains a class that generates a drupal from from a form definition stored in a content model.
  */
 module_load_include('inc', 'islandora_form_builder', 'Utilities');
 module_load_include('inc', 'islandora_form_builder_elements', 'Utilities');
@@ -15,8 +16,23 @@ module_load_include('inc', 'fedora_repository', 'ContentModel');
  */
 class FormGenerator {
 
+  /**
+   * Content Model's XML that contains the form's definition.
+   *
+   * @var string
+   */
   protected $formDefinition;
+  /**
+   * DOMXPath for the $formDefinition.
+   *
+   * @var DOMXPath
+   */
   protected $xpath;
+  /**
+   * An array of allowed drupal form element types.
+   *
+   * @var array
+   */
   protected $formElementTypes;
 
   /**
@@ -45,17 +61,15 @@ class FormGenerator {
   }
 
   /**
-   *
+   * Create the FormGenerator.
+   * 
    * @param ContentModel $content_model
    */
   private function __construct($content_model) {
     $this->contentModel = $content_model;
     $xml = $this->contentModel->dumpXml();
     $this->formDefinition = new DOMDocument();
-    //$this->formDefinition->loadXML($xml);
-    $filename = drupal_get_path('module', 'islandora_form_builder') . '/test.xml';
-    $this->formDefinition->load($filename);
-    // End Convience.
+    $this->formDefinition->loadXML($xml);
     $this->xpath = new DOMXPath($this->formDefinition);
     $this->xpath->registerNamespace('cm', "http://www.islandora.ca");
     $this->formElementTypes = islandora_form_builder_elements_get_allowed_form_elements();
@@ -84,6 +98,15 @@ class FormGenerator {
     return FALSE;
   }
 
+  /**
+   * Finds the named form in the content models definition.
+   *
+   * @param string $form_name
+   *   Name of the form element to retrieve.
+   * 
+   * @return DOMElement
+   *   The form element if found, FALSE otherwise.
+   */
   private function findFormElement($form_name) {
     $result = $this->xpath->query("//cm:form[@name='$form_name']");
     if ($result->length > 1) {
@@ -99,6 +122,15 @@ class FormGenerator {
     }
   }
 
+  /**
+   * Creates a drupal form element from a xml definition.
+   *
+   * @param DOMElement $form_element
+   *   XML definition of a drupal form element.
+   * 
+   * @return array
+   *   Drupal form element.
+   */
   private function createDrupalFormElement(&$form_element) {
     $type = $form_element->tagName;
     $form = array('#type' => $type);
@@ -115,6 +147,15 @@ class FormGenerator {
     return $form;
   }
 
+  /**
+   * Creates a drupal form control.
+   *
+   * @param DOMElement $form_element
+   *   A XML definition for the form control.
+   * 
+   * @return array
+   *   A drupal from control such as #title or #form_builder
+   */
   private function createDrupalFormControl(&$form_element) {
     $name = $form_element->tagName;
     $method_name = 'create' . str_replace('_', '', $name) . 'FormControl';
@@ -126,6 +167,15 @@ class FormGenerator {
     }
   }
 
+  /**
+   * Creates a Content Form Control.
+   *
+   * @param DOMElement $form_element
+   *   A XML definition for the form control.
+   *
+   * @return array
+   *   The drupal from control.
+   */
   private function createContentFormControl(&$form_element) {
     $content = array();
     $result = $this->xpath->query('child::*', $form_element);
@@ -136,6 +186,15 @@ class FormGenerator {
     return array('content', $content);
   }
 
+  /**
+   * Creates a Options Form Control.
+   *
+   * @param DOMElement $form_element
+   *   A XML definition for the form control.
+   *
+   * @return array
+   *   The drupal from control.
+   */
   private function createOptionsFormControl(&$form_element) {
     // Get all options
     $options = array();
@@ -153,6 +212,15 @@ class FormGenerator {
     return array('#options', $options);
   }
 
+  /**
+   * Creates a Form Builder Form Control.
+   *
+   * @param DOMElement $form_element
+   *   A XML definition for the form control.
+   *
+   * @return array
+   *   The drupal from control.
+   */
   private function createFormBuilderFormControl(&$form_element) {
     $form_builder = array();
     $path = $this->xpath->query('descendant::cm:path', $form_element)->item(0);
@@ -179,6 +247,12 @@ class FormGenerator {
     return array('#form_builder', $form_builder);
   }
 
+  /**
+   * Alter the generated TabPanel Form Element.
+   *
+   * @param DOMElement $form
+   *   The Drupal Form element to be altered.
+   */
   private function alterTabPanelFormElement(&$form) {
     $form['#form_builder'];
     $form['content'][0]['#form_builder'] = $form['#form_builder'];

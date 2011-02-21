@@ -14,6 +14,7 @@
  * IngestFormBuilder/EditFormBuilders classes or one of thier decendants.
  */
 module_load_include('inc', 'islandora_form_builder', 'FormPreprocessor');
+module_load_include('inc', 'islandora_form_builder', 'FormBuilderInterface');
 
 /**
  *
