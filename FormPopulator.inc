@@ -145,9 +145,9 @@ class FormPopulator {
     $class = $form->getAttribute('class');
     $path = drupal_get_path('module', $module);
     require_once "$path/$file";
-    list($default_prefix) = $class::getDefaultNamespace();
+    list($default_prefix) = call_user_func(array($class, "getDefaultNamespace"));
     $this->defaultPrefix = $default_prefix;
-    $namespaces = $class::getRequiredNamespaces();
+    $namespaces = call_user_func(array($class, "getRequiredNamespaces"));
     foreach ($namespaces as $prefix => $uri) { // Default namespaces not supported yet...
       $this->xpath->registerNamespace($prefix, $uri);
     }
