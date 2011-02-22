@@ -244,8 +244,8 @@ class FormPreprocessor {
         $break_here;
       }
       $value = $branch['#value'];
-      $require_value = $properties['require_value'];
-      $valid_value = is_string($value) && (!$require_value ? TRUE : trim($value) !== '');
+      $value_required = $properties['require_value'];
+      $valid_value = (!$value_required) || (is_string($value) && trim($value) !== '');
       return!$valid_value;
     }
     else {
