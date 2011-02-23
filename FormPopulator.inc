@@ -65,14 +65,15 @@ class FormPopulator {
    */
   public static function generateHashPath(&$node, $default_prefix) {
     $path = $node->nodeName;
-    $prefix = ($node->prefix == '') ? $default_prefix : $node->prefix;
+    $prefix = ($node->prefix == '') ? $default_prefix : '';
     $index = self::findXPathIndexInParentElement($node);
     $path = get_class($node) == 'DOMAttr' ? "@$path" : "$prefix:$path" . "[$index]";
     $parent = $node;
     while (($parent = $parent->parentNode) && (get_class($parent) == 'DOMElement')) {
       $index = self::findXPathIndexInParentElement($parent);
-      $prefix = ($parent->prefix == '') ? $default_prefix : $parent->prefix;
-      $path = "{$prefix}:{$parent->nodeName}[$index]/$path";
+      $prefix = ($parent->prefix == '') ? $default_prefix : '';
+      $parent_name = ($prefix != '' ? "{$prefix}:{$parent->nodeName}" : "{$parent->nodeName}");
+      $path = "{$parent_name}[$index]/$path";
     }
     $path = "/$path";
     return array(md5($path), $path);

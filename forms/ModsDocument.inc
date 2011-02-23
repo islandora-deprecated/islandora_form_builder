@@ -15,6 +15,7 @@ class ModsDocument extends XmlDatastreamFormDocument {
   const mods = 'http://www.loc.gov/mods/v3';
   const xlink = 'http://www.w3.org/1999/xlink';
   const xsi = 'http://www.w3.org/2001/XMLSchema-instance';
+  const xmlns = 'http://www.w3.org/2000/xmlns/';
 
   /**
    * Creates a ModsDocument, most processing is done in the parent class.
@@ -54,7 +55,7 @@ class ModsDocument extends XmlDatastreamFormDocument {
    * Create the root element, called from parent.
    */
   protected function createRootElement() {
-    $root = $this->createElementNS(self::mods, 'mods:mods');
+    $root = $this->createElementNS(self::mods, 'mods');
     $this->setRootAttributes($root);
     return $root;
   }
@@ -64,8 +65,9 @@ class ModsDocument extends XmlDatastreamFormDocument {
    */
   private function setRootAttributes($root) {
     $root->setAttribute('xmlns', self::mods);
-    $root->setAttribute('xmlns:xlink', self::xlink);
-    $root->setAttribute('xmlns:xsi', self::xsi);
+    $root->setAttributeNS(self::xmlns, 'xmlns:mods', self::mods);
+    $root->setAttributeNS(self::xmlns, 'xmlns:xlink', self::xlink);
+    $root->setAttributeNS(self::xmlns, 'xmlns:xsi', self::xsi);
     $this->setCorrectVersion($root);
   }
 
@@ -80,23 +82,23 @@ class ModsDocument extends XmlDatastreamFormDocument {
     switch ($version) {
       case '3.0':
         $root->setAttribute('version', '3.0');
-        $root->setAttribute('xsi:schemaLocation', self::mods . " http://www.loc.gov/standards/mods/v3/mods-3-0.xsd");
+        $root->setAttributeNS(self::xsi, 'xsi:schemaLocation', self::mods . " http://www.loc.gov/standards/mods/v3/mods-3-0.xsd");
         break;
       case '3.1':
         $root->setAttribute('version', '3.1');
-        $root->setAttribute('xsi:schemaLocation', self::mods . " http://www.loc.gov/standards/mods/v3/mods-3-1.xsd");
+        $root->setAttributeNS(self::xsi, 'xsi:schemaLocation', self::mods . " http://www.loc.gov/standards/mods/v3/mods-3-1.xsd");
         break;
       case '3.2':
         $root->setAttribute('version', '3.2');
-        $root->setAttribute('xsi:schemaLocation', self::mods . " http://www.loc.gov/standards/mods/v3/mods-3-2.xsd");
+        $root->setAttributeNS(self::xsi, 'xsi:schemaLocation', self::mods . " http://www.loc.gov/standards/mods/v3/mods-3-2.xsd");
         break;
       case '3.3':
         $root->setAttribute('version', '3.3');
-        $root->setAttribute('xsi:schemaLocation', self::mods . " http://www.loc.gov/standards/mods/v3/mods-3-3.xsd");
+        $root->setAttributeNS(self::xsi, 'xsi:schemaLocation', self::mods . " http://www.loc.gov/standards/mods/v3/mods-3-3.xsd");
         break;
       default:
         $root->setAttribute('version', '3.4');
-        $root->setAttribute('xsi:schemaLocation', self::mods . " http://www.loc.gov/standards/mods/v3/mods-3-4.xsd");
+        $root->setAttributeNS(self::xsi,'xsi:schemaLocation', self::mods . " http://www.loc.gov/standards/mods/v3/mods-3-4.xsd");
         break;
     }
   }

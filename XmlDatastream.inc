@@ -91,17 +91,25 @@ abstract class XmlDatastreamFormDocument extends DOMDocument {
    */
   private function initMembers(&$form, &$form_state, &$namespaces_to_register) {
     $this->formState = &$form_state;
-    $this->storage = &$form_state['storage']['form_builder']; // Storage specific to form builder.
-    $this->formValues = &$form_state['values']['form_builder'];
+    $this->storage = &$form_state['storage'][STORAGE_KEY]; // Storage specific to form builder.
+    $this->formValues = &$form_state['values'][FORM_ROOT];
     $this->form = &$form[FORM_ROOT];
     $form_preprocessor = new FormPreprocessor($this->form);
     $this->preprocessedForm = $form_preprocessor->process();
     $this->formatOutput = TRUE;
-    $this->xpath = new DOMXPath($this);
     $this->nameSpaces = $namespaces_to_register;
+    foreach ($this->nameSpaces as $prefix => $uri) {
+      $this->nameSpaceAttributes .= "xmlns:$prefix = \"$uri\" ";
+    }
+  }
+
+  /**
+   * 
+   */
+  private function setUpXPath() {
+    $this->xpath = new DOMXPath($this);
     foreach ($this->nameSpaces as $prefix => $uri) { // Default namespaces not supported yet...
       $this->xpath->registerNamespace($prefix, $uri);
-      $this->nameSpaceAttributes .= "xmlns:$prefix = \"$uri\" ";
     }
   }
 
@@ -114,12 +122,13 @@ abstract class XmlDatastreamFormDocument extends DOMDocument {
   private function createDocument() {
     if ($this->shouldModifyExistingDocument()) { // Edit forms.
       $document = $this->getExistingDocument();
-      $this->loadXML($document->saveXML()); // Is importing quicker?
+      $this->loadXML($document); // Is importing quicker?
       $this->modifyExistingDocument($this->preprocessedForm, $root);
     }
     else {
       $root = $this->createRootElement();
       $this->appendChild($root);
+      $this->setUpXPath();
       $this->createDocumentFromForm($this->preprocessedForm, $root);
     }
   }
@@ -131,6 +140,15 @@ abstract class XmlDatastreamFormDocument extends DOMDocument {
    *  The root element.
    */
   abstract protected function createRootElement();
+
+  /**
+   * Implemented in the child class this function gets the default name space.
+   *
+   * @return array
+   *  An array where the first element is the namespace prefix, the second element
+   *  is the namespace uri.
+   */
+  abstract protected static function getDefaultNamespace();
 
   /**
    * Should we modify an existing document?
@@ -149,10 +167,7 @@ abstract class XmlDatastreamFormDocument extends DOMDocument {
    *   Returns a DOMDocument from persistant storage if it exists. Otherwise it returns FALSE.
    */
   private function getExistingDocument() {
-    $document = $this->storage['xml'];
-    $exists = isset($document);
-    $is_dom_document = get_class($document) == 'DOMDocument';
-    return ($exists && $is_dom_document) ? $document : FALSE;
+    return isset($this->storage['xml']) ? $this->storage['xml'] : FALSE;
   }
 
   /**
@@ -164,6 +179,7 @@ abstract class XmlDatastreamFormDocument extends DOMDocument {
    *   Submitted form.
    */
   private function modifyExistingDocument(&$form, &$parent_node) {
+    $this->setUpXPath();
     $this->hashMap = $this->mapHashesToNodes();
     $this->removeDeletedNodes($form);
     $this->modifyDocument($form, $parent_node);
@@ -198,7 +214,7 @@ abstract class XmlDatastreamFormDocument extends DOMDocument {
   }
 
   private function getRemovedHashes($hash_map, &$form) {
-    $this->removeHashIfFound($form, $hash_map);
+    $this->removeHashIfFound($hash_map, $form);
     return $hash_map;
   }
 
@@ -259,8 +275,8 @@ abstract class XmlDatastreamFormDocument extends DOMDocument {
    */
   private function findNode($properties, $parent_node) {
     $hash = isset($properties['hash']) ? $properties['hash'] : NULL;
-    if($hash) {
-      return $this->hashMap[$hash]; 
+    if ($hash) {
+      return $this->hashMap[$hash];
     }
     list($path, $full) = $properties['path'];
     if ($full) {
@@ -344,7 +360,8 @@ abstract class XmlDatastreamFormDocument extends DOMDocument {
       return $parent->appendChild($node);
     }
     else {
-      $node = $this->createElement($element, $value);
+      list($prefix, $uri) = call_user_func(array(get_class($this), 'getDefaultNamespace'));
+      $node = $this->createElementNS($uri, $element, $value);
       return $parent->appendChild($node);
     }
   }
