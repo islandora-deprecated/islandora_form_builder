@@ -356,11 +356,13 @@ abstract class XmlDatastreamFormDocument extends DOMDocument {
   private function createElementNode($element, $value, $parent) {
     if (strpos($element, ':') !== FALSE) {
       list($prefix, $name) = explode(':', $element);
+      $value = (trim($value) == '') ? NULL : $value;
       $node = $this->createElementNS($this->nameSpaces[$prefix], $element, $value);
       return $parent->appendChild($node);
     }
     else {
       list($prefix, $uri) = call_user_func(array(get_class($this), 'getDefaultNamespace'));
+      $value = (trim($value) == '') ? NULL : $value;
       $node = $this->createElementNS($uri, $element, $value);
       return $parent->appendChild($node);
     }
@@ -378,9 +380,11 @@ abstract class XmlDatastreamFormDocument extends DOMDocument {
   private function createAttributeNode($attribute, $value, $parent) {
     if (strpos($attribute, ':') !== FALSE) {
       list($prefix, $name) = explode(':', $attribute);
+      $value = (trim($value) == '') ? NULL : $value;
       return $parent->setAttributeNS($this->nameSpaces[$prefix], $attribute, $value);
     }
     else {
+      $value = (trim($value) == '') ? NULL : $value;
       return $parent->setAttribute($attribute, $value);
     }
   }

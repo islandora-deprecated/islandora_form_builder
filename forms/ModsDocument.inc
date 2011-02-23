@@ -64,7 +64,7 @@ class ModsDocument extends XmlDatastreamFormDocument {
    * Correct/Add required root attributes.
    */
   private function setRootAttributes($root) {
-    $root->setAttribute('xmlns', self::mods);
+    $root->setAttributeNS(self::xmlns, 'xmlns', self::mods);
     $root->setAttributeNS(self::xmlns, 'xmlns:mods', self::mods);
     $root->setAttributeNS(self::xmlns, 'xmlns:xlink', self::xlink);
     $root->setAttributeNS(self::xmlns, 'xmlns:xsi', self::xsi);
