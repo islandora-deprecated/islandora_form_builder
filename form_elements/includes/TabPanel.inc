@@ -300,6 +300,7 @@ function ife_prune_extra_tabpanels(&$tabpanel) {
     if (is_numeric($key)) {
       $has_content = isset($child['content']);
       if ($has_content) {
+        $content = &$child['content'];
         ife_remove_added_tabpanels($content);
         ife_prune_extra_tabpanels($content[0]);
       }
