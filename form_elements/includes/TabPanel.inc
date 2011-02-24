@@ -39,23 +39,40 @@ class TabPanel {
   public function themeEachTab(&$form) {
     $name = $form['#name'];
     $title = $form['#title'];
-    // Headers
-    $count = 1;
+    $output = $this->themeTabHeader($form, $name, $title);
+    $output .= $this->themeTabContent($form, $name, $title);
+    return $output;
+  }
+
+  private function themeTabHeader(&$form, $name, $title) {
     $output = '<ul>';
-    $output .= '<li><a href="#' . $name . '-0">' . $title . '</a><span id="add-' . $name . '" class="ui-icon ui-icon-circle-plus" style="float: left; margin: 0.4em 0.2em 0 0; cursor: pointer;">' . $form[0]["add-tab"]['#id'] . '</span></li>';
-    $count = 1;
-    while (isset($form[$count])) {
-      $output .= '<li><a href="#' . $name . '-' . $count . '">' . $count . '</a><span id="remove-' . $name . '-' . $count . '" class="ui-icon ui-icon-close" style="float: left; margin: 0.4em 0.2em 0 0; cursor: pointer;">' . $form[$count]['remove-tab']['#id'] . '</span></li>';
-      $count++;
+    $output .= '<li>';
+    $output .= "<a href='#$name-0'>$title</a><span id='add-$name' class='ui-icon ui-icon-circle-plus' style='float: left; margin: 0.4em 0.2em 0 0; cursor: pointer;'>";
+    $output .= $form[0]["add-tab"]['#id'];
+    $output .= '</span>';
+    $output .= '</li>';
+    foreach ($form as $key => $panel) {
+      if (is_numeric($key) && $key > 0) {
+        $output .= '<li>';
+        $output .= "<a href='#$name-$key'>$key</a>";
+        $output .= "<span id='remove-$name-$key' class='ui-icon ui-icon-close' style='float: left; margin: 0.4em 0.2em 0 0; cursor: pointer;'>";
+        $output .= $panel['remove-tab']['#id'];
+        $output .= '</span>';
+        $output .= '</li>';
+      }
     }
     $output .= '</ul>';
-    // Content
-    $count = 0;
-    while (isset($form[$count])) {
-      $output .= '<div id="' . $name . '-' . $count . '">';
-      $output .= drupal_render($form[$count]);
-      $output .= '</div>';
-      $count++;
+    return $output;
+  }
+
+  private function themeTabContent(&$form, $name, $title) {
+    $output = '';
+    foreach ($form as $key => $panel) {
+      if (is_numeric($key)) {
+        $output .= "<div id='$name-$key'>";
+        $output .= drupal_render($form[$key]);
+        $output .= '</div>';
+      }
     }
     return $output;
   }
@@ -69,7 +86,7 @@ class TabPanel {
     array_walk($path, array($this, 'stringifyPath'));
     $path = implode('', $path);
     $this->createAddTabButton($form['content'], $path, $wrapper);
-    $this->createRemoveTabButtons($form['content'], $form['#id'], $wrapper);
+    $this->createRemoveTabButtons($form['content'], $path, $wrapper);
     return $form;
   }
 
@@ -163,7 +180,8 @@ class TabPanel {
       case 'remove':
         list($index, $path) = $params;
         $tabpanel = &$this->findTabPanel($form, $path);
-        $this->removePanel($index, $tabpanel);
+        $post = &$this->findPost($form, $path);
+        $this->removePanel($index, $tabpanel, $post);
         break;
     }
     return $path; // $path of the modified tabpanel.
@@ -233,9 +251,9 @@ class TabPanel {
     }
   }
 
-  private function removePanel($index, &$tabpanel) {
-    unset($tabpanel['content'][$index]); // remove the panel.
-    // remove the stored values for that panel.
+  private function removePanel($index, &$tabpanel, &$post) {
+    array_splice($tabpanel['content'], $index, 1);
+    array_splice($post['content'], $index, 1);
   }
 
   private function saveChanges(&$form_build_id, &$form, &$form_state) {
@@ -254,6 +272,13 @@ class TabPanel {
     $command = "\$tabpanel = &\$form$path;";
     $result = eval($command);
     return $tabpanel;
+  }
+
+  private function &findPost(&$form, &$path) {
+    $post = '';
+    $command = "\$post = &\$_POST$path;";
+    $result = eval($command);
+    return $post;
   }
 
   private function sendJSON(&$tabpanel) {
