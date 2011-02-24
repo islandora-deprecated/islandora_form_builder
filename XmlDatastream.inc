@@ -321,9 +321,12 @@ abstract class XmlDatastreamFormDocument extends DOMDocument {
     if ($node && $value) { // Found, and needs to be modified.
       return $this->modifyNode($node, $value);
     }
-    if (!$node) { // Create
+    else if (!$node) { // Create
       $parent = $this->findParentNode($properties, $parent_node);
       return $this->createNode($properties, $value, $parent);
+    }
+    else {
+      return $node;
     }
   }
 
