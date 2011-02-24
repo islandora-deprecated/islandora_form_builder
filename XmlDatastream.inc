@@ -62,6 +62,12 @@ abstract class XmlDatastreamFormDocument extends DOMDocument {
    * @var array
    */
   protected $hashMap;
+  /**
+   * A map where the key's are hash's and the values are DOMNode's. This repersents the nodes that were removed in the
+   * form. This nodes will be removed from the document.
+   * @var array
+   */
+  protected $nodesToDeleteHashMap;
 
   /**
    * Create a XmlDatastreamForm.
@@ -208,27 +214,82 @@ abstract class XmlDatastreamFormDocument extends DOMDocument {
   }
 
   private function removeDeletedNodes(&$form) {
-    $hashes_to_remove = $this->getRemovedHashes($this->hashMap, $form);
-    foreach ($hashes_to_remove as $hash => $node) {
-      $node->parentNode->removeChild($node);
-      unset($this->hashMap[$hash]);
+    $this->nodesToDeleteHashMap = $this->getHashMapOfNodesToDelete($form);
+    while ($node = array_shift($this->nodesToDeleteHashMap)) {
+      if ($node->hasChildNodes()) {
+        $this->removeDeletedChildren($node);
+      }
+      if ($node->hasAttributes()) {
+        $this->removeDeletedAttributes($node);
+      }
+      try {
+        switch (get_class($node)) {
+          case 'DOMElement':
+            $this->removeDeletedChild($node);
+            break;
+          case 'DOMAttr':
+            $this->removeDeletedAttribute($node);
+            break;
+        }
+      } catch (Exception $e) {
+        $i = 0;
+        $i++;
+      }
     }
   }
 
-  private function getRemovedHashes($hash_map, &$form) {
-    $this->removeHashIfFound($hash_map, $form);
+  private function getHashMapOfNodesToDelete(&$form) {
+    $hash_map = $this->hashMap;
+    $this->removeHashIfFoundInForm($hash_map, $form);
     return $hash_map;
   }
 
-  private function removeHashIfFound(&$hash_map, &$form) {
+  private function removeHashIfFoundInForm(&$hash_map, &$form) {
     foreach ($form as $form_element) {
       $hash = isset($form_element['#form_builder']['hash']) ? $form_element['#form_builder']['hash'] : FALSE;
       if ($hash) {
         unset($hash_map[$hash]);
       }
       if (isset($form_element['#children'])) {
-        $this->removeHashIfFound($hash_map, $form_element['#children']);
+        $this->removeHashIfFoundInForm($hash_map, $form_element['#children']);
       }
+    }
+  }
+
+  private function removeDeletedChildren(&$node) {
+    $count = $node->childNodes->length;
+    for ($i = $count - 1; $i >= 0; $i--) {
+      $child = $node->childNodes->item($i);
+      if ($child->hasChildNodes()) {
+        $this->removeDeletedChildren($child);
+      }
+      $this->removeDeletedChild($child);
+    }
+  }
+
+  private function removeDeletedChild(&$child) {
+    array_walk($this->hashMap, array($this, 'removeNodeFromHashMaps'), $child);
+    $child->parentNode->removeChild($child);
+  }
+
+  private function removeDeletedAttributes(&$node) {
+    $count = $node->attributes->length;
+    for ($i = $count - 1; $i >= 0; $i--) {
+      $attribute = $node->attributes->item($i);
+      $this->removeDeletedAttribute($attribute);
+    }
+  }
+
+  private function removeDeletedAttribute(&$attribute) {
+    array_walk($this->hashMap, array($this, 'removeNodeFromHashMaps'), $attribute);
+    if (isset($attribute->ownerElement)) {
+      $attribute->ownerElement->removeAttributeNode($attribute);
+    }
+  }
+
+  private function removeNodeFromHashMaps(&$node, &$key, &$test_node) {
+    if ($test_node->isSameNode($node)) {
+      unset($this->hashMap[$key], $this->nodesToDeleteHashMap[$key]);
     }
   }
 
@@ -283,9 +344,6 @@ abstract class XmlDatastreamFormDocument extends DOMDocument {
     list($path, $full) = $properties['path'];
     if ($full) {
       $result = $this->xpath->query($path);
-      if ($result == FALSE) {
-        $break_here;
-      }
       return $result->length == 1 ? $result->item(0) : FALSE;
     }
     $result = $this->xpath->query($path, $parent_node);

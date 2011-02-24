@@ -110,7 +110,7 @@ class FormPreprocessor {
         $properties = $this->getFormBuilderProperties($form_elements);
         if ($properties) {
           $form_element['#form_builder'] = $properties;
-          //$form_element['#form_builder']['path'][0] .= "[$count]"; Should this be done here, or as part of the tabpanel process.???
+          $form_element['#form_builder']['path'][0] = "mostunli"; // We Want the path to fail, so that a new object is created when no hash exists.
           $form_element['#children'] = array();
           $this->processFormElements($form_elements, $form_element); // Root child elements.
           $this->addToProcessedForm($form_element, $processed_form);

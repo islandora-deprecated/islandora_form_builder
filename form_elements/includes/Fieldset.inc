@@ -52,7 +52,6 @@ class Fieldset {
   public static function populate(&$form, &$registered_nodes) {
     list($hash, $node) = $registered_nodes[0];
     $form['content'][0]['#form_builder'] = $form['#form_builder'];
-    $form['content'][0]['#form_builder']['path'][0] .= "[1]"; // XPath indices start at 1
     $form['content'][0]['#form_builder']['hash'] = $hash;
   }
 

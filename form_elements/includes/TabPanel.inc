@@ -22,8 +22,6 @@ class TabPanel {
       list($hash, $node) = $registered_node;
       $form['content'][$i] = $form['content'][0];
       $form['content'][$i]['#form_builder'] = $form['#form_builder'];
-      $xpath_index = $i + 1;
-      $form['content'][$i]['#form_builder']['path'][0] .= "[$xpath_index]"; // XPath indices start at 1
       $form['content'][$i]['#form_builder']['hash'] = $hash;
       $i++;
     }
@@ -216,7 +214,6 @@ function &ife_get_tabpanel(&$form, $clicked_button) {
   return $point;
 }
 
-
 /**
  * Calculates the number of tab panels.
  *
@@ -299,13 +296,38 @@ function ife_remove_added_tabpanels(&$content) {
  *   An array containing the forms repersentation of each panel.
  */
 function ife_prune_extra_tabpanels(&$tabpanel) {
-  $children = &$tabpanel['children'];
-  foreach (element_children($children) as $key) { // Find child tabpanels
-    $type = $children[$key]['#type'];
-    if (isset($children[$key]['content'])) {
-      $content = &$children[$key]['content'];
-      ife_remove_added_tabpanels($content);
-      ife_prune_extra_tabpanels($content[0]);
+  foreach ($tabpanel as $key => &$child) {
+    if (is_numeric($key)) {
+      $has_content = isset($child['content']);
+      if ($has_content) {
+        ife_remove_added_tabpanels($content);
+        ife_prune_extra_tabpanels($content[0]);
+      }
+    }
+  }
+}
+
+function ife_remove_hash(&$form) {
+  if (isset($form['#form_builder'])) {
+    if (isset($form['#form_builder']['hash'])) {
+      unset($form['#form_builder']['hash']);
+    }
+  }
+}
+
+/**
+ *
+ * @param <type> $tabpanel 
+ */
+function ife_remove_hashes(&$tabpanel) {
+  ife_remove_hash($tabpanel);
+  foreach ($tabpanel as $key => &$child) {
+    if (is_numeric($key)) {
+      ife_remove_hash($child);
+      $has_content = isset($child['content']);
+      if ($has_content) {
+        ife_remove_hash($child['content'][0]);
+      }
     }
   }
 }
@@ -324,10 +346,8 @@ function ife_add_tabpanel(&$form, $clicked_button) {
   $content[$count] = $content[0];
   $tabpanel = &ife_get_tabpanel($form, $clicked_button);
   $content[$count]['#form_builder'] = $tabpanel['#form_builder'];
-  $xpath_index = $count + 1;
-  $content[$count]['#form_builder']['path'][0] = ''; // New Element, so we can't find it on the path
-  unset($content[$count]['#form_builder']['hash']); // New Element, no hash.
   ife_prune_extra_tabpanels($content[$count]);
+  ife_remove_hashes($content[$count]);
 }
 
 /**
