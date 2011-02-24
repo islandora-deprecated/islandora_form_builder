@@ -125,8 +125,6 @@ class EditFormBuilder implements FormBuilderInterface {
     $content_model = ContentModel::loadFromObject($this->pid);
     list($class) = $this->loadDocumentClass($content_model);
     $document = new $class($form, $this->formState);
-    echo $document->saveXML();
-    exit();
     $this->modifyDatastream($document, "{$this->dsid}", "{$this->dsid} Record", 'text/xml');
     $transform = drupal_get_path('module', 'islandora_form_builder') . '/transforms/mods_to_dc.xsl'; // TODO add transform to content modeler ...
     $dublin_core = $this->transformDocumentIntoDublinCore($document, $transform);
@@ -151,9 +149,9 @@ class EditFormBuilder implements FormBuilderInterface {
     $xsl->load($transform);
     $xslt = new XSLTProcessor();
     $xslt->importStyleSheet($xsl);
-    $document = new DOMDocument();
-    $document->loadXML($document->saveXML());
-    return $xslt->transformToDoc($document->documentElement);
+    $doc = new DOMDocument();
+    $doc->loadXML($document->saveXML());
+    return $xslt->transformToDoc($doc->documentElement);
   }
 
   /**
