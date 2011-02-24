@@ -148,7 +148,9 @@ abstract class XmlDatastreamFormDocument extends DOMDocument {
    *  An array where the first element is the namespace prefix, the second element
    *  is the namespace uri.
    */
-  abstract protected static function getDefaultNamespace();
+  static function getDefaultNamespace() {
+    throw new Exception('You must implement this static function in the child class');
+  }
 
   /**
    * Should we modify an existing document?
@@ -220,8 +222,8 @@ abstract class XmlDatastreamFormDocument extends DOMDocument {
 
   private function removeHashIfFound(&$hash_map, &$form) {
     foreach ($form as $form_element) {
-      $hash = $form_element['#form_builder']['hash'];
-      if (isset($hash)) {
+      $hash = isset($form_element['#form_builder']['hash']) ? $form_element['#form_builder']['hash'] : FALSE;
+      if ($hash) {
         unset($hash_map[$hash]);
       }
       if (isset($form_element['#children'])) {
@@ -253,12 +255,12 @@ abstract class XmlDatastreamFormDocument extends DOMDocument {
    */
   private function createOrModifyNode($form, $parent_node) {
     $properties = $form['#form_builder'];
-    $value = isset($form['#value']) ? $form['#value'] : '';
+    $value = isset($form['#value']) ? trim($form['#value']) : NULL;
     $node = $this->findNode($properties, $parent_node);
-    if ($node) { // Found
+    if ($node && $value) { // Found, and needs to be modified.
       return $this->modifyNode($node, $value);
     }
-    else { // Create
+    if (!$node) { // Create
       $parent = $this->findParentNode($properties, $parent_node);
       return $this->createNode($properties, $value, $parent);
     }

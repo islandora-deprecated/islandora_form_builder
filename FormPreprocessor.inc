@@ -105,12 +105,12 @@ class FormPreprocessor {
   private function processContent(&$form, &$processed_form) {
     $count = 1;
     $content = $form['content'];
-    $properties = $this->getFormBuilderProperties($form);
     foreach ($content as $key => &$form_elements) {
       if (is_numeric($key)) {
+        $properties = $this->getFormBuilderProperties($form_elements);
         if ($properties) {
           $form_element['#form_builder'] = $properties;
-          $form_element['#form_builder']['path'][0] .= "[$count]";
+          //$form_element['#form_builder']['path'][0] .= "[$count]"; Should this be done here, or as part of the tabpanel process.???
           $form_element['#children'] = array();
           $this->processFormElements($form_elements, $form_element); // Root child elements.
           $this->addToProcessedForm($form_element, $processed_form);

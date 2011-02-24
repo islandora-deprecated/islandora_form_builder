@@ -22,7 +22,8 @@ class TabPanel {
       list($hash, $node) = $registered_node;
       $form['content'][$i] = $form['content'][0];
       $form['content'][$i]['#form_builder'] = $form['#form_builder'];
-      $form['content'][$i]['#form_builder']['path'][0] .= '[' . $i + 1 . ']'; // XPath indices start at 1
+      $xpath_index = $i + 1;
+      $form['content'][$i]['#form_builder']['path'][0] .= "[$xpath_index]"; // XPath indices start at 1
       $form['content'][$i]['#form_builder']['hash'] = $hash;
       $i++;
     }
