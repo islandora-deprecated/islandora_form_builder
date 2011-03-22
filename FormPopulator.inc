@@ -64,16 +64,14 @@ class FormPopulator {
    *   An two index array where the first is the hash of the node and the second is an xpath to the node.
    */
   public static function generateHashPath(&$node, $default_prefix) {
-    $path = $node->nodeName;
-    $prefix = ($node->prefix == '') ? $default_prefix : '';
+    $path = self::getNodeXPath($node, $default_prefix);
     $index = self::findXPathIndexInParentElement($node);
-    $path = get_class($node) == 'DOMAttr' ? "@$path" : "$prefix:$path" . "[$index]";
+    $path = get_class($node) == 'DOMAttr' ? "@$path" : "{$path}[{$index}]";
     $parent = $node;
     while (($parent = $parent->parentNode) && (get_class($parent) == 'DOMElement')) {
+      $parent_path = self::getNodeXPath($parent, $default_prefix);
       $index = self::findXPathIndexInParentElement($parent);
-      $prefix = ($parent->prefix == '') ? $default_prefix : '';
-      $parent_name = ($prefix != '' ? "{$prefix}:{$parent->nodeName}" : "{$parent->nodeName}");
-      $path = "{$parent_name}[$index]/$path";
+      $path = "{$parent_path}[$index]/$path";
     }
     $path = "/$path";
     return array(md5($path), $path);
@@ -97,6 +95,16 @@ class FormPopulator {
       }
     }
     return $count;
+  }
+
+  private static function getNodeXPath(&$node, &$default_prefix) {
+    $node->nodeName;
+    if($node->prefix == '' && get_class($node) != 'DOMAttr') {
+      return "{$default_prefix}:{$node->nodeName}";
+    }
+    else {
+      return $node->nodeName;
+    }
   }
 
   /**

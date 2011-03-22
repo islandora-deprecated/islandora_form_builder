@@ -117,6 +117,11 @@ abstract class XmlDatastreamFormDocument extends DOMDocument {
     foreach ($this->nameSpaces as $prefix => $uri) { // Default namespaces not supported yet...
       $this->xpath->registerNamespace($prefix, $uri);
     }
+    $simple = new SimpleXMLElement($this->saveXML());
+    $names = $simple->getNamespaces(TRUE);
+    foreach($names as $prefix => $uri) {
+      $this->xpath->registerNamespace($prefix, $uri);
+    }
   }
 
   /**
@@ -206,6 +211,10 @@ abstract class XmlDatastreamFormDocument extends DOMDocument {
     $hashes = $this->storage['hashes']; // Copy
     foreach ($hashes as $hash => $path) {
       $result = $this->xpath->query($path);
+      if($result == FALSE) {
+        var_dump($path);
+        exit();
+      }
       if ($result->length == 1) {
         $hash_map[$hash] = $result->item(0);
       }
