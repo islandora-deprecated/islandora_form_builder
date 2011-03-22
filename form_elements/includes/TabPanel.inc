@@ -33,7 +33,15 @@ class TabPanel {
     drupal_add_js($path . '/js/jquery-ui-1.8.7.custom.min.js');
     drupal_add_js($path . '/js/tabpanel_ahah.js');
     drupal_add_css($path . '/css/ui-lightness/jquery-ui-1.8.7.custom.css');
-    return '<div id=' . t(implode('-', $element['#array_parents'])) . ' class="action-expand-tab">' . $element['#children'] . '</div>';
+    $classes = 'action-load-tabpanel';
+    if($element['#collapsible']) {
+      $classes .= ' property-collapsible-tabpanel';
+    }
+    if($element['#collapsed']) {
+      $classes .= ' property-collapsed-tabpanel';
+    }
+    $id = t(implode('-', $element['#array_parents']));
+    return "<div id='$id' class='$classes'>{$element['#children']}</div>";
   }
 
   public function themeEachTab(&$form) {
