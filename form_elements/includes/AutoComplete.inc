@@ -14,27 +14,25 @@
  * @return <type>
  */
 function islandora_form_builder_elements_autocomplete_person($string) {
-  $string = trim(strtolower($string));
-
   module_load_include('inc', 'fedora_repository', 'api/fedora_item');
   module_load_include('php', 'islandora_solr_search', 'Solr/Service');
   $host = variable_get('islandora_solr_search_block_host', 'localhost');
   $port = variable_get('islandora_solr_search_block_port', '8080');
-  $appName = variable_get('islandora_solr_search_block_app_name', 'solr');
-  $requestHandler = variable_get("islandora_solr_search_block_request_handler", t("standard"));
+  $app_name = variable_get('islandora_solr_search_block_app_name', 'solr');
+  $request_handler = variable_get("islandora_solr_search_block_request_handler", t("standard"));
+  $solr = new Apache_Solr_Service($host, $port, '/' . $app_name . '/');
 
-  $solr = new Apache_Solr_Service($host, $port, '/' . $appName . '/');
-
+  $string = trim(strtolower($string));
   $string = $solr->escape($string);
   $query = 'name_personal_t:' . $string . '* OR name_organization_t:' . $string . '* OR name_conference_t:' . $string . '*';
 
-  $additionalParams = array(
+  $additional_params = array(
     'facet' => 'false',
-    'qt' => $requestHandler,
+    'qt' => $request_handler,
   );
 
   try {
-    $results = $solr->search($query, 0, 10, $additionalParams);
+    $results = $solr->search($query, 0, 10, $additional_params);
   } catch (Exception $e) {
     drupal_set_message(t('error searching ') . $e->getMessage());
   }
@@ -42,26 +40,20 @@ function islandora_form_builder_elements_autocomplete_person($string) {
     drupal_set_message(t('Error searching solr index. Is the solr search block configured properly?'), 'error');
     return ' ';
   }
-
   header('content-type: text/plain');
   $matches = array();
 
   foreach ($results->response->docs as $doc) {
-
     $item = new fedora_item($doc->id);
-
     $mods = $item->get_datastream_dissemination('MODS');
     if (trim($mods) != '') {
       $modsDom = new DomDocument();
       $modsDom->loadXML($mods);
-
       $xpath = new DOMXPath($modsDom);
       $xpath->registerNamespace("php", "http://php.net/xpath");
       $xpath->registerPHPFunctions();
-//  	echo $mods;
       $nodeList = $xpath->evaluate('/mods:mods/mods:name');
       foreach ($nodeList as $node) {
-
         $type = $node->getAttribute('type');
         $title = null;
         $name = null;
@@ -89,9 +81,9 @@ function islandora_form_builder_elements_autocomplete_person($string) {
         }
 
         $role = null;
-        $roleTerm = $node->getElementsByTagName('roleTerm');
-        if ($roleTerm->length > 0) {
-          $role = $roleTerm->item(0)->nodeValue;
+        $role_term = $node->getElementsByTagName('roleTerm');
+        if ($role_term->length > 0) {
+          $role = $role_term->item(0)->nodeValue;
         }
 
         if (strpos(strtolower($name), $string) !== FALSE) {
@@ -203,10 +195,10 @@ function islandora_form_builder_elements_autocomplete($field, $collection, $stri
   module_load_include('php', 'islandora_solr_search', 'Solr/Service');
   $host = variable_get('islandora_solr_search_block_host', 'localhost');
   $port = variable_get('islandora_solr_search_block_port', '8080');
-  $appName = variable_get('islandora_solr_search_block_app_name', 'solr');
-  $solr = new Apache_Solr_Service($host, $port, '/' . $appName . '/');
+  $app_name = variable_get('islandora_solr_search_block_app_name', 'solr');
+  $solr = new Apache_Solr_Service($host, $port, '/' . $app_name . '/');
 
-  $additionalParams = array(
+  $additional_params = array(
     'fl' => $field
   );
 
@@ -217,7 +209,7 @@ function islandora_form_builder_elements_autocomplete($field, $collection, $stri
   }
 
   try {
-    $results = $solr->search($query, 0, 10, $additionalParams);
+    $results = $solr->search($query, 0, 10, $additional_params);
   } catch (Exception $e) {
     drupal_set_message(t('error searching ') . $e->getMessage());
   }

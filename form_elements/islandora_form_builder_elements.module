@@ -86,42 +86,37 @@ function islandora_form_builder_elements_menu() {
     'access arguments' => array(ObjectHelper::$INGEST_FEDORA_OBJECTS),
     'file' => 'includes/Set.inc',
   );
-  $items['autocomplete_marcrelator/%'] = array(
+  $items['formbuilder/autocomplete/marcrelator'] = array(
     'title' => 'autocomplete',
     'page callback' => 'islandora_form_builder_elements_autocomplete_marcrelator',
-    'page arguments' => array(1),
     'type' => MENU_CALLBACK,
     'access arguments' => array(ObjectHelper::$INGEST_FEDORA_OBJECTS),
     'file' => 'includes/AutoComplete.inc'
   );
-  $items['autocomplete_gacs/%'] = array(
+  $items['formbuilder/autocomplete/gacs'] = array(
     'title' => 'autocomplete',
     'page callback' => 'islandora_form_builder_elements_autocomplete_gacs',
-    'page arguments' => array(1),
     'type' => MENU_CALLBACK,
     'access arguments' => array(ObjectHelper::$INGEST_FEDORA_OBJECTS),
     'file' => 'includes/AutoComplete.inc'
   );
-  $items['autocomplete_language/%'] = array(
+  $items['formbuilder/autocomplete/language'] = array(
     'title' => 'autocomplete',
     'page callback' => 'islandora_form_builder_elements_autocomplete_language',
-    'page arguments' => array(1),
     'type' => MENU_CALLBACK,
     'access arguments' => array(ObjectHelper::$INGEST_FEDORA_OBJECTS),
     'file' => 'includes/AutoComplete.inc'
   );
-  $items['autocomplete_person/%'] = array(
+  $items['formbuilder/autocomplete/person'] = array(
     'title' => 'autocomplete',
     'page callback' => 'islandora_form_builder_elements_autocomplete_person',
-    'page arguments' => array(1),
     'type' => MENU_CALLBACK,
     'access arguments' => array(ObjectHelper::$INGEST_FEDORA_OBJECTS),
     'file' => 'includes/AutoComplete.inc'
   );
-  $items['autocomplete/%/%'] = array(
+  $items['formbuilder/autocomplete/solr'] = array(
     'title' => 'autocomplete',
     'page callback' => 'islandora_form_builder_elements_autocomplete',
-    'page arguments' => array(1, 2),
     'type' => MENU_CALLBACK,
     'access arguments' => array(ObjectHelper::$INGEST_FEDORA_OBJECTS),
     'file' => 'includes/AutoComplete.inc',
