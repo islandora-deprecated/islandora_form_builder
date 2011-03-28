@@ -62,18 +62,16 @@ function islandora_form_builder_validate_url_argument_collection_pid($collection
  *   The current user.
  * @param string $pid
  *   The objects pid.
- * @param string $dsid
- *   The datastream the edit form will be modifing.
  * 
  * @return boolean
  *   TRUE if the user has permission to edit the datastream, and the arguments are valid,
  *   FALSE otherwise.
  */
-function islandora_form_builder_check_edit_form_arguments_and_permissions($pid, $dsid, $form_name) {
+function islandora_form_builder_check_edit_form_arguments_and_permissions($pid, $form_name) {
   global $user;
   module_load_include('inc', 'fedora_repository', 'ObjectHelper');
-  if ($pid == NULL || $dsid == NULL || $form_name == NULL) {
-    drupal_set_message(t('You must specify an object pid a XML based dsid and a form name to edit.'), 'error');
+  if ($pid == NULL || $form_name == NULL) {
+    drupal_set_message(t('You must specify an object pid and a form name to edit.'), 'error');
     return FALSE;
   }
   else if (!fedora_repository_access(OBJECTHELPER :: $EDIT_FEDORA_METADATA, $pid, $user)) {

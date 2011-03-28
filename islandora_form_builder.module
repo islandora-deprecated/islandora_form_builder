@@ -26,13 +26,6 @@ function islandora_form_builder_menu() {
     'access arguments' => array('add fedora datastreams')
   );
   
-  $items['formbuilder/ingest/%/%'] = array(// Discuss urls at a later date.
-    'title' => t('Ingest Form'),
-    'page callback' => 'islandora_form_builder_ingest',
-    'type' => MENU_CALLBACK,
-    'access arguments' => array('add fedora datastreams')
-  );
-
   $items['formbuilder/edit'] = array(// Discuss urls at a later date.
     'title' => t('Edit Form'),
     'page callback' => 'islandora_form_builder_edit',
@@ -112,16 +105,14 @@ function islandora_form_builder_ingest_form_submit(&$form, &$form_state) {
  *
  * @param string $pid
  *   Object PID.
- * @param string $dsid
- *   Datastream ID.
  * 
  * @return array
  *   A drupal form, used to edit the object $pid and the datastream $dsid.
  */
-function islandora_form_builder_edit($pid = NULL, $dsid = NULL, $form_name = NULL) {
-  if (islandora_form_builder_check_edit_form_arguments_and_permissions($pid, $dsid, $form_name)) {
+function islandora_form_builder_edit($pid = NULL, $form_name = NULL) {
+  if (islandora_form_builder_check_edit_form_arguments_and_permissions($pid, $form_name)) {
     islandora_form_builder_set_bread_crumbs($pid);
-    return drupal_get_form('islandora_form_builder_edit_form', $pid, $dsid, $form_name);
+    return drupal_get_form('islandora_form_builder_edit_form', $pid, $form_name);
   }
 }
 
@@ -132,9 +123,9 @@ function islandora_form_builder_edit($pid = NULL, $dsid = NULL, $form_name = NUL
  * @param <type> $dsid
  * @return <type> 
  */
-function islandora_form_builder_edit_form(&$form_state, $pid, $dsid, $form_name) {
+function islandora_form_builder_edit_form(&$form_state, $pid, $form_name) {
   module_load_include('inc', 'islandora_form_builder', 'EditFormBuilder');
-  $edit_form_builder = new EditFormBuilder($form_state, $pid, $dsid, $form_name);
+  $edit_form_builder = new EditFormBuilder($form_state, $pid, $form_name);
   $form = $edit_form_builder->createForm();
   return $form;
 }
