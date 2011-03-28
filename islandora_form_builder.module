@@ -25,6 +25,14 @@ function islandora_form_builder_menu() {
     'type' => MENU_CALLBACK,
     'access arguments' => array('add fedora datastreams')
   );
+  
+  $items['formbuilder/ingest/%/%'] = array(// Discuss urls at a later date.
+    'title' => t('Ingest Form'),
+    'page callback' => 'islandora_form_builder_ingest',
+    'type' => MENU_CALLBACK,
+    'access arguments' => array('add fedora datastreams')
+  );
+
   $items['formbuilder/edit'] = array(// Discuss urls at a later date.
     'title' => t('Edit Form'),
     'page callback' => 'islandora_form_builder_edit',

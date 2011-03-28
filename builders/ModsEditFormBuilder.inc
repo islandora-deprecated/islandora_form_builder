@@ -13,7 +13,7 @@ module_load_include('inc', 'fedora_repository', 'api/fedora_item');
 /**
  *
  */
-class EditFormBuilder implements FormBuilderInterface {
+class ModsEditFormBuilder implements FormBuilderInterface {
 
   /**
    * Drupal persistance form storage, specifically the index STORAGE_KEY where all
