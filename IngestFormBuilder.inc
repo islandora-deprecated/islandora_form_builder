@@ -199,7 +199,7 @@ class IngestFormBuilder implements FormBuilderInterface {
       $identifier = $content_model->getIdentifier();
       $name = $content_model->name;
       $models_for_form[$identifier] = $name;
-      $forms_avaliable[$identifier] = $content_model->getFormNames();
+      $forms_avaliable[$identifier] = $content_model->getIngestFormNames();
     }
     $form['indicator'] = array(
       '#type' => 'fieldset',
@@ -232,25 +232,8 @@ class IngestFormBuilder implements FormBuilderInterface {
    *
    */
   private function getFormPageTwo() {
-    module_load_include('inc', 'islandora_form_builder', 'FormGenerator');
-    $form_values = &$this->formState['values'];
-    $file = isset($form_values['ingest-file-location']) ? $form_values['ingest-file-location'] : '';
-    $form['#attributes']['enctype'] = 'multipart/form-data';
-    $form['indicator']['ingest-file-location'] = array(
-      '#type' => 'file',
-      '#title' => t('Upload Document'),
-      '#size' => 48,
-      '#description' => t('Full text'),
-    );
-    $form_generator = FormGenerator::CreateFromModel($this->contentModelPid, $this->contentModelDsid);
-    $form[FORM_ROOT] = $form_generator->generate($this->formName); // TODO get from user .
-    $form['submit'] = array(
-      '#type' => 'submit',
-      '#value' => t('Ingest'),
-      '#prefix' => t('Please be patient. Once you click next there may be a number of files created. ' .
-          'Depending on your content model this could take a few minutes to process.<br />')
-    );
-    return $form;
+    $form = &$this->createIngestFormClass();
+    return $form->createForm();
   }
 
   /**
@@ -285,41 +268,8 @@ class IngestFormBuilder implements FormBuilderInterface {
    *   Drupal form to be validated.
    */
   private function validateFormTwo(&$form) {
-    $validators = array();
-    $form_values = &$this->formState['values'];
-    if (!empty($_FILES['files']['name']['ingest-file-location'])) {
-      $file_object = file_save_upload('ingest-file-location', $validators);
-      file_move($file_object->filepath, 0, 'FILE_EXISTS_RENAME');
-      $form_values['ingest-file-location'] = $file_object->filepath;
-    }
-    if (file_exists($form_values['ingest-file-location'])) {
-      module_load_include('inc', 'fedora_repository', 'ContentModel');
-      module_load_include('inc', 'fedora_repository', 'MimeClass');
-      $file = $form_values['ingest-file-location'];
-      $content_model = ContentModel::loadFromModel($this->contentModelPid, $this->contentModelDsid);
-      if ($content_model !== FALSE) {
-        $allowed_mime_types = $content_model->getMimetypes();
-        $mime = new MimeClass();
-        $mime_type = $mime->getType($file);
-        if (!empty($file)) {
-          if (!in_array($mime_type, $allowed_mime_types)) {
-            $error = t("The uploaded file\'s mimetype ($mime_type) is not associated with this Content Model. The allowed types are " .
-                    implode(' ', $allowed_mime_types));
-            form_set_error('ingest-file-location', $error);
-            file_delete($file);
-            return;
-          }
-          else if (!$content_model->execIngestRules($file, $mime_type)) {
-            drupal_set_message(t('Error following Content Model Rules'), 'error');
-            foreach (ContentModel::$errors as $error) {
-              drupal_set_message($error, 'error');
-            }
-          }
-        }
-      }
-    }
-    $this->formState['rebuild'] = FALSE;
-    return;
+    $form = &$this->createIngestFormClass();
+    return $form->validateForm($form);
   }
 
   /**
@@ -328,49 +278,25 @@ class IngestFormBuilder implements FormBuilderInterface {
    *  $form
    */
   public function submitForm(&$form) {
-    module_load_include('inc', 'fedora_repository', 'CollectionPolicy');
-    $error = TRUE;
-    $should_redirect = TRUE;
-    $collection_policy = CollectionPolicy::loadFromCollection($this->collectionPid);
-    if ($collection_policy !== FALSE) {
-      module_load_include('inc', 'fedora_repository', 'ContentModel');
-      $relationship = $collection_policy->getRelationship();
-      $content_model = ContentModel::loadFromModel($this->contentModelPid, $this->contentModelDsid);
-      if ($content_model !== FALSE) {
-        module_load_include('inc', 'islandora_form_builder', 'FoxmlForm');
-        list($class, $dsid) = $this->loadDocumentClass($content_model);
-        $label = "";
-        $pid = $collection_policy->getNextPid($this->contentModelDsid);
-        $ingest_file_location = isset($this->formState['values']['ingest-file-location']) ? $this->formState['values']['ingest-file-location'] : NULL;
-        $document = new $class($form, $this->formState);
-        $transform = drupal_get_path('module', 'islandora_form_builder') . '/transforms/mods_to_dc.xsl';
-        $foxml = new FoxmlDocument($label, $pid, $dsid, $this->contentModelPid, $this->collectionPid, $relationship, $ingest_file_location, $document, $transform);
-        $error = $foxml->ingest();
-        $_SESSION['fedora_ingest_files'] = ''; //empty this variable
-        $this->formState['storage'] = NULL;
-      }
-    }
-    if ($should_redirect) {
-      global $base_url;
-      $this->formState['redirect'] = ($error) ? '' : $base_url . "/fedora/repository/{$this->collectionPid}";
-    }
+    $form = &$this->createIngestFormClass();
+    return $form->submitForm($form);
   }
 
-  /**
-   * Loads the appropriate class file, and returns the class name.
-   * 
-   * @param ContentModel $content_model
-   * @return string
-   */
-  private function loadDocumentClass($content_model) {
-    $form = $content_model->getForm($this->formName);
-    $module = $form->getAttribute('module');
-    $file = $form->getAttribute('file');
-    $class = $form->getAttribute('class');
-    $dsid = $form->getAttribute('dsid');
-    $path = drupal_get_path('module', $module);
-    require_once "$path/$file";
-    return array($class, $dsid);
+  private function &createIngestFormClass() {
+    $content_model = ContentModel::loadFromModel($this->contentModelPid, $this->contentModelDsid);
+    $form_element = $content_model->getForm($this->formName);
+    $module = $form_element->getAttribute('ingest_module');
+    $filename = $form_element->getAttribute('ingest_file');
+    $class = $form_element->getAttribute('ingest_class');
+    $file = './' . drupal_get_path('module', $module) . "/$filename";
+    if (is_file($file)) {
+      require_once $file;
+    }
+    else {
+      return FALSE;
+    }
+    $form = new $class($this->formState);
+    return $form;
   }
 
 }
