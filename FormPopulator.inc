@@ -152,7 +152,7 @@ class FormPopulator {
     $module = $form->getAttribute('document_module');
     $file = $form->getAttribute('document_file');
     $class = $form->getAttribute('document_class');
-    $path = drupal_get_path('document_module', $module);
+    $path = drupal_get_path('module', $module);
     require_once "$path/$file";
     list($default_prefix) = call_user_func(array($class, "getDefaultNamespace"));
     $this->defaultPrefix = $default_prefix;
