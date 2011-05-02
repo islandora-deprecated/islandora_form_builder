@@ -149,10 +149,10 @@ class FormPopulator {
     module_load_include('inc', 'fedora_repository', 'ContentModel');
     $content_model = ContentModel::loadFromObject($this->item->pid);
     $form = $content_model->getForm($form_name);
-    $module = $form->getAttribute('module');
-    $file = $form->getAttribute('file');
-    $class = $form->getAttribute('class');
-    $path = drupal_get_path('module', $module);
+    $module = $form->getAttribute('document_module');
+    $file = $form->getAttribute('document_file');
+    $class = $form->getAttribute('document_class');
+    $path = drupal_get_path('document_module', $module);
     require_once "$path/$file";
     list($default_prefix) = call_user_func(array($class, "getDefaultNamespace"));
     $this->defaultPrefix = $default_prefix;
